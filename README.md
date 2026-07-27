@@ -64,7 +64,7 @@ wp argent-video worker --limit=3
 
 ## Release ZIPs
 
-Push an annotated semantic version tag such as `v0.2.1`. The release workflow validates versions, lints PHP, runs dependency-free and real FFmpeg tests, fetches the pinned hls.js player, builds an installable ZIP whose only top-level directory is `wp-argent-video-processor/`, creates `SHA256SUMS`, and attaches both files to the GitHub release.
+Push an annotated semantic version tag such as `v0.2.2`. The release workflow validates versions, lints PHP, runs dependency-free and real FFmpeg tests, fetches the pinned hls.js player, builds an installable ZIP whose only top-level directory is `wp-argent-video-processor/`, creates `SHA256SUMS`, and attaches both files to the GitHub release.
 
 Use the ZIP attached to the GitHub Release, not GitHub's automatically generated source archives.
 

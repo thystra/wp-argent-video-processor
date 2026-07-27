@@ -19,7 +19,7 @@ function is_admin(): bool { return false; }
 
 require dirname(__DIR__) . '/wp-argent-video-processor.php';
 
-if (! defined('ARGENT_VIDEO_VERSION') || '0.2.1' !== ARGENT_VIDEO_VERSION) {
+if (! defined('ARGENT_VIDEO_VERSION') || '0.2.2' !== ARGENT_VIDEO_VERSION) {
     fwrite(STDERR, "Plugin smoke load failed.\n");
     exit(1);
 }

@@ -9,7 +9,14 @@ DIST_DIR="${ROOT_DIR}/dist"
 STAGE_ROOT="$(mktemp -d)"
 STAGE_DIR="${STAGE_ROOT}/${SLUG}"
 
-cleanup() { rm -rf "${STAGE_ROOT}"; }
+cleanup() {
+  rm -rf "${STAGE_ROOT}"
+  rm -f \
+    "${ROOT_DIR}/assets/vendor/hls.min.js" \
+    "${ROOT_DIR}/assets/vendor/hls.LICENSE" \
+    "${ROOT_DIR}/assets/vendor/hls.VERSION" \
+    "${ROOT_DIR}/assets/vendor/hls.SHA256"
+}
 trap cleanup EXIT
 
 if [[ ! "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then

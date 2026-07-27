@@ -140,6 +140,10 @@ other secrets here.
 - Argent Video Processor v0.2.1 fixes release-player vendoring by validating
   the exact npm package and runtime `Hls.version` rather than relying on a banner
   string in the minified JavaScript file.
+- Argent Video Processor v0.2.2 fixes release-license validation by checking
+  the exact npm package SPDX identity and substantive Apache-2.0 license text,
+  then packaging the license shipped by that verified package rather than
+  requiring byte-for-byte equality with a repository snapshot.
 
 ## WordPress plugin packaging and releases
 

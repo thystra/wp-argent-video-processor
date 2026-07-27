@@ -1,6 +1,14 @@
 <!-- /home/alan/src/wp-argent-video-processor/CHANGELOG.md -->
 # Changelog
 
+## 0.2.2 - 2026-07-27
+
+- Fix tagged-release HLS.js vendoring when the npm package license text differs from the repository snapshot.
+- Validate the exact package SPDX license as `Apache-2.0` and substantively inspect the package-provided license text instead of requiring byte-for-byte equality.
+- Install the exact license shipped in the verified npm package into the release ZIP.
+- Treat all vendored HLS.js files as generated release assets and remove them from the source tree after packaging so local builds do not modify tracked source files.
+- Extend the offline regression test with both a valid differently formatted Apache-2.0 license and a rejected non-Apache package.
+
 ## 0.2.1 - 2026-07-27
 
 - Fix tagged-release HLS.js vendoring by replacing a brittle minified-banner string check with npm package-integrity and runtime-version validation.

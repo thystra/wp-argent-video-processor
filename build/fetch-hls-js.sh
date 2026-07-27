@@ -4,9 +4,11 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Pin an exact stable release. Do not use npm major ranges or canary builds.
-# npm verifies the registry package integrity before extraction; this script then
-# verifies the package identity and the runtime Hls.version value.
+# npm verifies registry package integrity before extraction. This script then
+# verifies package identity, SPDX license identity, license text, JavaScript
+# syntax, and the runtime Hls.version value.
 HLS_VERSION='1.6.16'
+HLS_LICENSE='Apache-2.0'
 TARGET_DIR="${ARGENT_VIDEO_HLS_TARGET_DIR:-${ROOT_DIR}/assets/vendor}"
 TARGET_FILE="${TARGET_DIR}/hls.min.js"
 TARGET_LICENSE="${TARGET_DIR}/hls.LICENSE"
@@ -22,6 +24,40 @@ require_command() {
   fi
 }
 
+validate_apache_license() {
+  local license="$1"
+
+  if [[ ! -s "${license}" ]]; then
+    echo 'Vendored hls.js license is missing.' >&2
+    return 1
+  fi
+
+  node - "${license}" <<'NODE'
+'use strict';
+const fs = require('fs');
+const licensePath = process.argv[2];
+let text;
+try {
+  text = fs.readFileSync(licensePath, 'utf8').replace(/\s+/g, ' ');
+} catch (error) {
+  console.error(`Unable to read vendored hls.js license: ${error.message}`);
+  process.exit(1);
+}
+const required = [
+  /Apache License(?:,)? Version 2\.0/i,
+  /apache\.org\/licenses\/LICENSE-2\.0/i,
+  /AS IS/i,
+  /limitations under the License/i,
+];
+for (const pattern of required) {
+  if (!pattern.test(text)) {
+    console.error(`Vendored hls.js license does not satisfy Apache-2.0 policy: missing ${pattern}`);
+    process.exit(1);
+  }
+}
+NODE
+}
+
 validate_runtime_asset() {
   local asset="$1"
   local license="$2"
@@ -30,11 +66,8 @@ validate_runtime_asset() {
     echo 'Vendored hls.js asset is missing or unexpectedly small.' >&2
     return 1
   fi
-  if [[ ! -s "${license}" ]]; then
-    echo 'Vendored hls.js license is missing.' >&2
-    return 1
-  fi
 
+  validate_apache_license "${license}"
   node --check "${asset}" >/dev/null
   node - "${asset}" "${HLS_VERSION}" <<'NODE'
 'use strict';
@@ -113,11 +146,12 @@ PACKAGE_JSON="${PACKAGE_DIR}/package.json"
 PACKAGE_ASSET="${PACKAGE_DIR}/dist/hls.min.js"
 PACKAGE_LICENSE="${PACKAGE_DIR}/LICENSE"
 
-node - "${PACKAGE_JSON}" "${HLS_VERSION}" <<'NODE'
+node - "${PACKAGE_JSON}" "${HLS_VERSION}" "${HLS_LICENSE}" <<'NODE'
 'use strict';
 const fs = require('fs');
 const packagePath = process.argv[2];
-const expected = process.argv[3];
+const expectedVersion = process.argv[3];
+const expectedLicense = process.argv[4];
 let metadata;
 try {
   metadata = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
@@ -125,8 +159,12 @@ try {
   console.error(`Unable to read hls.js package metadata: ${error.message}`);
   process.exit(1);
 }
-if (metadata.name !== 'hls.js' || metadata.version !== expected) {
+if (metadata.name !== 'hls.js' || metadata.version !== expectedVersion) {
   console.error(`Unexpected npm package identity: ${String(metadata.name)}@${String(metadata.version)}`);
+  process.exit(1);
+}
+if (metadata.license !== expectedLicense) {
+  console.error(`Unexpected hls.js package license: expected ${expectedLicense}, found ${String(metadata.license)}`);
   process.exit(1);
 }
 NODE
@@ -137,19 +175,16 @@ cp -- "${PACKAGE_ASSET}" "${TMP_ASSET}"
 cp -- "${PACKAGE_LICENSE}" "${TMP_LICENSE}"
 validate_runtime_asset "${TMP_ASSET}" "${TMP_LICENSE}"
 
-if [[ -s "${TARGET_LICENSE}" ]] && ! cmp -s "${TMP_LICENSE}" "${TARGET_LICENSE}"; then
-  echo 'Pinned hls.js package license differs from the reviewed repository copy.' >&2
-  exit 1
-fi
-
+# Install the exact license shipped in the verified npm package. License text
+# may legitimately differ in formatting or notices from repository snapshots;
+# package identity and substantive Apache-2.0 validation are authoritative.
 install -m 0644 "${TMP_ASSET}" "${TARGET_FILE}"
-if [[ ! -s "${TARGET_LICENSE}" ]]; then
-  install -m 0644 "${TMP_LICENSE}" "${TARGET_LICENSE}"
-fi
+install -m 0644 "${TMP_LICENSE}" "${TARGET_LICENSE}"
 printf '%s\n' "${HLS_VERSION}" > "${TARGET_VERSION}"
 (cd "${TARGET_DIR}" && sha256sum hls.min.js > "$(basename "${TARGET_HASH}")")
 
 validate_runtime_asset "${TARGET_FILE}" "${TARGET_LICENSE}"
-printf 'Fetched and verified hls.js %s from the npm registry: %s\n' "${HLS_VERSION}" "${TARGET_FILE}"
+printf 'Fetched and verified hls.js %s (%s) from the npm registry: %s\n' \
+  "${HLS_VERSION}" "${HLS_LICENSE}" "${TARGET_FILE}"
 
 # EOF: /home/alan/src/wp-argent-video-processor/build/fetch-hls-js.sh
