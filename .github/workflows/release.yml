@@ -30,6 +30,10 @@ jobs:
           echo "version=${TAG#v}" >> "${GITHUB_OUTPUT}"
       - name: Install build tools
         run: sudo apt-get update && sudo apt-get install --yes rsync zip unzip ffmpeg curl
+      - name: Verify Node and npm
+        run: |
+          node --version
+          npm --version
       - name: PHP syntax check
         run: find . -type f -name '*.php' -not -path './dist/*' -print0 | sort -z | xargs -0 -n1 php -l
       - name: Run tests
@@ -37,6 +41,7 @@ jobs:
           php tests/run.php
           php tests/smoke-load.php
           php tests/ffmpeg-integration.php
+          bash tests/vendor-fetch.sh
           node --check assets/js/argent-video-player.js
       - name: Check whitespace errors
         run: git diff --check
@@ -51,6 +56,8 @@ jobs:
           test "$(unzip -Z1 "${ZIP}" | awk -F/ 'NF {print $1}' | sort -u)" = 'wp-argent-video-processor'
           unzip -Z1 "${ZIP}" | grep -qx 'wp-argent-video-processor/assets/vendor/hls.min.js'
           unzip -Z1 "${ZIP}" | grep -qx 'wp-argent-video-processor/assets/vendor/hls.LICENSE'
+          unzip -Z1 "${ZIP}" | grep -qx 'wp-argent-video-processor/assets/vendor/hls.VERSION'
+          unzip -Z1 "${ZIP}" | grep -qx 'wp-argent-video-processor/assets/vendor/hls.SHA256'
           (cd dist && sha256sum --check SHA256SUMS)
       - name: Create or update GitHub release
         env:

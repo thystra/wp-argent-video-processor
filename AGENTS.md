@@ -10,10 +10,11 @@ Read `AGENTS-PROFILE.md` first for Alan's cross-project operating conventions.
 - Stable WordPress plugin slug and release ZIP root: `wp-argent-video-processor`
 - Initial version: `0.1.0`
 - Last production-validated version: `0.1.1`
-- Current development version: `0.2.0`
+- Current development version: `0.2.1`
 - Normal deployment method: download the tag-built GitHub release ZIP and install or upgrade it through the WordPress web UI.
 - Tagged release builds must vendor the pinned hls.js runtime; do not use GitHub's automatically generated source archive as the WordPress package.
 - hls.js is pinned to exact stable version `1.6.16`. Do not use a broad `@1` range or canary packages; specific 1.7.0 alpha-canary package versions were reported as malicious in 2026.
+- Vendor the exact npm package from the official registry with scripts disabled; verify npm package identity, JavaScript syntax, runtime `Hls.version`, license, and generated SHA-256 record. Do not rely on a human-readable banner inside a minified bundle.
 
 ## Production target and validation
 
@@ -93,12 +94,13 @@ Before a release:
 - run `php tests/run.php`;
 - run `php tests/smoke-load.php`;
 - run `php tests/ffmpeg-integration.php`;
+- run `bash tests/vendor-fetch.sh`;
 - run `node --check assets/js/argent-video-player.js`;
 - run `git diff --check`;
 - run `bash build/fetch-hls-js.sh`;
 - run `bash build/build-plugin.sh <current-version>`;
 - verify the ZIP has exactly one `wp-argent-video-processor/` top-level directory;
-- verify the ZIP contains `assets/vendor/hls.min.js` and its license;
+- verify the ZIP contains `assets/vendor/hls.min.js`, its license, `hls.VERSION`, and `hls.SHA256`;
 - inspect `git status` and `git diff` before commit;
 - push an annotated `vX.Y.Z` tag only after the branch commit is pushed.
 

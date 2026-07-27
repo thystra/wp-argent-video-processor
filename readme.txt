@@ -4,7 +4,7 @@ Tags: video, ffmpeg, hls, adaptive streaming, webm, media
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.2.0
+Stable tag: 0.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -59,6 +59,11 @@ No. It uses the configured system FFmpeg and FFprobe binaries and checks their v
 Yes, generated derivatives and HLS renditions strip metadata by default. The source attachment is not modified.
 
 == Changelog ==
+
+= 0.2.1 =
+* Fix release ZIP builds by validating the exact hls.js npm package and its runtime version instead of searching the minified file for a human-readable banner.
+* Include the vendored player version and SHA-256 record in release packages.
+* Add a regression test for HLS.js vendoring.
 
 = 0.2.0 =
 * Add adaptive HLS with 360p, 480p, and 720p H.264/AAC fragmented MP4 renditions where source resolution permits.

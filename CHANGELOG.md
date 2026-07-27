@@ -1,6 +1,14 @@
 <!-- /home/alan/src/wp-argent-video-processor/CHANGELOG.md -->
 # Changelog
 
+## 0.2.1 - 2026-07-27
+
+- Fix tagged-release HLS.js vendoring by replacing a brittle minified-banner string check with npm package-integrity and runtime-version validation.
+- Download the exact `hls.js@1.6.16` npm package from the official registry with lifecycle scripts disabled.
+- Verify package name/version, JavaScript syntax, runtime `Hls.version`, minimum asset size, and the reviewed Apache license before packaging.
+- Record the vendored asset version and SHA-256 checksum in the release ZIP.
+- Add an offline regression test for the HLS.js package extraction and validation path.
+
 ## 0.2.0 - 2026-07-27
 
 - Add adaptive HLS output with 360p, 480p, and 720p H.264/AAC renditions where source resolution permits.

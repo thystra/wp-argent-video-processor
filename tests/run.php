@@ -70,8 +70,8 @@ $assert(array(1080, 1920) === Probe::display_dimensions($rotated), 'Display dime
 
 $plugin = file_get_contents(dirname(__DIR__) . '/wp-argent-video-processor.php');
 $readme = file_get_contents(dirname(__DIR__) . '/readme.txt');
-$assert(false !== $plugin && str_contains($plugin, 'Version: 0.2.0'), 'Plugin header version must be 0.2.0.');
-$assert(false !== $readme && str_contains($readme, 'Stable tag: 0.2.0'), 'Stable tag must be 0.2.0.');
+$assert(false !== $plugin && str_contains($plugin, 'Version: 0.2.1'), 'Plugin header version must be 0.2.1.');
+$assert(false !== $readme && str_contains($readme, 'Stable tag: 0.2.1'), 'Stable tag must be 0.2.1.');
 
 if ([] !== $failures) {
     foreach ($failures as $failure) {

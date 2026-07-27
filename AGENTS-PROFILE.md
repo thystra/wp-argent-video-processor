@@ -137,6 +137,9 @@ other secrets here.
   more than two minutes without pauses.
 - Argent Video Processor v0.2.0 adds adaptive HLS and an administrator backlog
   queue while retaining the one-at-a-time detached worker model.
+- Argent Video Processor v0.2.1 fixes release-player vendoring by validating
+  the exact npm package and runtime `Hls.version` rather than relying on a banner
+  string in the minified JavaScript file.
 
 ## WordPress plugin packaging and releases
 

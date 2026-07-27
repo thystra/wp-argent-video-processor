@@ -70,12 +70,19 @@ if [[ "${TOP_LEVEL_COUNT}" -ne 1 || "${TOP_LEVEL_NAME}" != "${SLUG}" ]]; then
   echo "Release ZIP does not contain exactly one ${SLUG}/ top-level directory." >&2
   exit 1
 fi
-if ! unzip -Z1 "${DIST_DIR}/${ZIP_NAME}" | grep -qx "${SLUG}/assets/vendor/hls.min.js"; then
-  if [[ "${ARGENT_VIDEO_ALLOW_MISSING_HLS_JS:-0}" != '1' ]]; then
-    echo 'Release ZIP is missing the vendored hls.js player.' >&2
-    exit 1
+for REQUIRED_VENDOR_FILE in \
+  hls.min.js \
+  hls.LICENSE \
+  hls.VERSION \
+  hls.SHA256
+do
+  if ! unzip -Z1 "${DIST_DIR}/${ZIP_NAME}" | grep -qx "${SLUG}/assets/vendor/${REQUIRED_VENDOR_FILE}"; then
+    if [[ "${ARGENT_VIDEO_ALLOW_MISSING_HLS_JS:-0}" != '1' ]]; then
+      printf 'Release ZIP is missing required vendored hls.js file: %s\n' "${REQUIRED_VENDOR_FILE}" >&2
+      exit 1
+    fi
   fi
-fi
+done
 (
   cd "${DIST_DIR}"
   sha256sum "${ZIP_NAME}" > SHA256SUMS

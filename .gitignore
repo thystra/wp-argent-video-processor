@@ -1,6 +1,8 @@
 # /home/alan/src/wp-argent-video-processor/.gitignore
 /dist/
 /assets/vendor/hls.min.js
+/assets/vendor/hls.VERSION
+/assets/vendor/hls.SHA256
 *.zip
 *.tar.gz
 
