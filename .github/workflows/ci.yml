@@ -20,33 +20,34 @@ jobs:
         run: php --version
 
       - name: Install build tools
-        run: sudo apt-get update && sudo apt-get install --yes rsync zip unzip
+        run: sudo apt-get update && sudo apt-get install --yes rsync zip unzip ffmpeg
 
       - name: PHP syntax check
         run: find . -type f -name '*.php' -not -path './dist/*' -print0 | sort -z | xargs -0 -n1 php -l
 
-      - name: Run dependency-free tests
+      - name: Run tests
         run: |
           php tests/run.php
           php tests/smoke-load.php
+          php tests/ffmpeg-integration.php
 
       - name: Check whitespace errors
         run: git diff --check
 
       - name: Build installable plugin ZIP
-        run: bash build/build-plugin.sh 0.1.0
+        run: bash build/build-plugin.sh 0.1.1
 
       - name: Inspect ZIP root
         run: |
-          unzip -Z1 dist/wp-argent-video-processor-0.1.0.zip | head -n 50
-          test "$(unzip -Z1 dist/wp-argent-video-processor-0.1.0.zip | awk -F/ 'NF {print $1}' | sort -u)" = 'wp-argent-video-processor'
+          unzip -Z1 dist/wp-argent-video-processor-0.1.1.zip | head -n 50
+          test "$(unzip -Z1 dist/wp-argent-video-processor-0.1.1.zip | awk -F/ 'NF {print $1}' | sort -u)" = 'wp-argent-video-processor'
 
       - name: Upload test package
         uses: actions/upload-artifact@v4
         with:
-          name: wp-argent-video-processor-0.1.0
+          name: wp-argent-video-processor-0.1.1
           path: |
-            dist/wp-argent-video-processor-0.1.0.zip
+            dist/wp-argent-video-processor-0.1.1.zip
             dist/SHA256SUMS
           if-no-files-found: error
 

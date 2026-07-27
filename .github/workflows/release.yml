@@ -32,15 +32,16 @@ jobs:
           echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
 
       - name: Install build tools
-        run: sudo apt-get update && sudo apt-get install --yes rsync zip unzip
+        run: sudo apt-get update && sudo apt-get install --yes rsync zip unzip ffmpeg
 
       - name: PHP syntax check
         run: find . -type f -name '*.php' -not -path './dist/*' -print0 | sort -z | xargs -0 -n1 php -l
 
-      - name: Run dependency-free tests
+      - name: Run tests
         run: |
           php tests/run.php
           php tests/smoke-load.php
+          php tests/ffmpeg-integration.php
 
       - name: Check whitespace errors
         run: git diff --check

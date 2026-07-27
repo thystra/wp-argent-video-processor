@@ -44,6 +44,13 @@ $settings = array(
 $mp4 = Command_Builder::mp4('/in.mp4', '/out.mp4', $settings);
 $webm = Command_Builder::webm('/in.mp4', '/out.webm', $settings);
 
+$mp4_input_index = array_search('-i', $mp4, true);
+$webm_input_index = array_search('-i', $webm, true);
+$assert(false !== $mp4_input_index && '/in.mp4' === ($mp4[$mp4_input_index + 1] ?? ''), 'MP4 source must immediately follow the -i input option.');
+$assert(false !== $webm_input_index && '/in.mp4' === ($webm[$webm_input_index + 1] ?? ''), 'WebM source must immediately follow the -i input option.');
+$assert(! in_array('-autorotate', $mp4, true), 'MP4 command must rely on FFmpeg default autorotation rather than the fragile explicit input flag.');
+$assert(! in_array('-autorotate', $webm, true), 'WebM command must rely on FFmpeg default autorotation rather than the fragile explicit input flag.');
+
 $assert(in_array('-map_metadata', $mp4, true), 'MP4 command must strip source metadata.');
 $assert(in_array('-map_chapters', $mp4, true), 'MP4 command must strip chapters.');
 $assert(in_array('+faststart', $mp4, true), 'MP4 command must enable fast-start indexing.');
@@ -54,8 +61,8 @@ $assert(! in_array('rotate=0', $mp4, true) && ! in_array('rotate=0', $webm, true
 
 $plugin = file_get_contents(dirname(__DIR__) . '/wp-argent-video-processor.php');
 $readme = file_get_contents(dirname(__DIR__) . '/readme.txt');
-$assert(false !== $plugin && str_contains($plugin, 'Version: 0.1.0'), 'Plugin header version must be 0.1.0.');
-$assert(false !== $readme && str_contains($readme, 'Stable tag: 0.1.0'), 'Stable tag must be 0.1.0.');
+$assert(false !== $plugin && str_contains($plugin, 'Version: 0.1.1'), 'Plugin header version must be 0.1.1.');
+$assert(false !== $readme && str_contains($readme, 'Stable tag: 0.1.1'), 'Stable tag must be 0.1.1.');
 
 if ([] !== $failures) {
     foreach ($failures as $failure) {

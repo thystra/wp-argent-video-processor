@@ -87,7 +87,8 @@ final class Command_Builder
             '-hide_banner',
             '-nostdin',
             '-y',
-            '-autorotate',
+            // FFmpeg enables input autorotation by default. Do not pass the explicit
+            // per-input flag because some packaged FFmpeg versions misparse it.
             '-i',
             $source,
             '-map',

@@ -42,6 +42,15 @@ final class CLI_Command
 
         try {
             $result = $this->worker->run($limit);
+            foreach ($result['errors'] as $failure) {
+                WP_CLI::warning(sprintf(
+                    'Job %d for attachment %d failed: %s',
+                    $failure['job_id'],
+                    $failure['attachment_id'],
+                    $this->error_summary($failure['message'])
+                ));
+            }
+
             WP_CLI::success(sprintf(
                 'Worker complete: %d processed, %d failed, %d stale recovered.',
                 $result['processed'],
@@ -135,6 +144,16 @@ final class CLI_Command
             }
         }
         WP_CLI::success('Queued ' . $queued . ' existing video attachment(s).');
+    }
+
+    private function error_summary(string $message): string
+    {
+        $message = preg_replace('/\s+/', ' ', trim($message)) ?? trim($message);
+        if (strlen($message) <= 500) {
+            return $message;
+        }
+
+        return substr($message, 0, 497) . '...';
     }
 }
 

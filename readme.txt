@@ -4,7 +4,7 @@ Tags: video, ffmpeg, webm, streaming, media
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.1.0
+Stable tag: 0.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -30,7 +30,7 @@ The plugin's five-minute WordPress event only launches a detached WP-CLI worker.
 
 = Are original videos deleted? =
 
-No. Version 0.1.0 always preserves the original attachment.
+No. Argent Video Processor always preserves the original attachment.
 
 = Is all processing performed in PHP? =
 
@@ -45,6 +45,12 @@ The default profile uses VP9/Opus WebM first and H.264/AAC MP4 as a compatibilit
 Yes, generated derivatives strip metadata by default. The source attachment is not modified.
 
 == Changelog ==
+
+= 0.1.1 =
+* Fix FFmpeg compatibility by relying on default input autorotation instead of passing the explicit `-autorotate` flag.
+* Report failed job and attachment details in manual WP-CLI worker output.
+* Check the encoders required by the configured profile in diagnostics.
+* Add a real FFmpeg integration test covering rotation normalization and location-metadata removal.
 
 = 0.1.0 =
 * Initial queue, detached worker, FFmpeg processing, validation, metadata stripping, render substitution, admin controls, WP-CLI commands, and tag release workflow.

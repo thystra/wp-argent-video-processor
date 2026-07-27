@@ -20,7 +20,7 @@ final class Worker
     ) {
     }
 
-    /** @return array{processed:int,failed:int,recovered:int} */
+    /** @return array{processed:int,failed:int,recovered:int,errors:list<array{job_id:int,attachment_id:int,message:string}>} */
     public function run(int $limit = 1): array
     {
         $limit = max(1, min(25, $limit));
@@ -33,6 +33,7 @@ final class Worker
         $processed = 0;
         $failed = 0;
         $recovered = 0;
+        $errors = array();
 
         try {
             $recovered = $this->jobs->recover_stale((int) Settings::get('stale_job_minutes', 240));
@@ -56,6 +57,11 @@ final class Worker
                     $this->jobs->fail((int) $job['id'], $message);
                     update_post_meta($attachment_id, '_argent_video_status', 'failed');
                     update_post_meta($attachment_id, '_argent_video_last_error', $message);
+                    $errors[] = array(
+                        'job_id'        => (int) $job['id'],
+                        'attachment_id' => $attachment_id,
+                        'message'       => $message,
+                    );
                     $failed++;
                 }
             }
@@ -74,7 +80,7 @@ final class Worker
             $this->release_lock($token);
         }
 
-        return compact('processed', 'failed', 'recovered');
+        return compact('processed', 'failed', 'recovered', 'errors');
     }
 
     public static function lock_is_active(): bool

@@ -1,6 +1,13 @@
 <!-- /home/alan/src/wp-argent-video-processor/CHANGELOG.md -->
 # Changelog
 
+## 0.1.1 - 2026-07-27
+
+- Fix FFmpeg compatibility by relying on default input autorotation instead of passing the explicit `-autorotate` flag.
+- Show failed job and attachment details in manual WP-CLI worker output.
+- Check required H.264/AAC and VP9/Opus encoders in diagnostics according to the selected profile.
+- Add an FFmpeg integration test covering command execution, rotation normalization, codec output, and location-metadata removal.
+
 ## 0.1.0 - 2026-07-26
 
 - Queue newly uploaded video attachments.

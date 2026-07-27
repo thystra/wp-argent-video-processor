@@ -9,6 +9,7 @@ Read `AGENTS-PROFILE.md` first for Alan's cross-project operating conventions.
 - Development checkout on `fafnir`: `/home/alan/src/wp-argent-video-processor`
 - Stable WordPress plugin slug and release ZIP root: `wp-argent-video-processor`
 - Initial version: `0.1.0`
+- Current version: `0.1.1`
 - Normal deployment method: download the tag-built GitHub release ZIP and install or upgrade it through the WordPress web UI.
 
 ## Initial production target
@@ -28,9 +29,9 @@ Root runs `/root/scripts/wordpress-cron-jobs.sh` every five minutes. The script:
 3. runs Nextcloud cron as `nextcloud`;
 4. runs the Friendica worker as `friendica`.
 
-Because those tasks are serial, an Argent Video cron callback must not run FFmpeg synchronously. Version 0.1.0's recurring callback checks the queue, starts a detached low-priority `wp argent-video worker --once` process as the current site user, and returns immediately.
+Because those tasks are serial, an Argent Video cron callback must not run FFmpeg synchronously. The recurring callback checks the queue, starts a detached low-priority `wp argent-video worker --once` process as the current site user, and returns immediately.
 
-## Version 0.1.0 behavior
+## Current behavior
 
 - `add_attachment` queues local `video/*` attachments.
 - The original attachment is always preserved.
@@ -47,11 +48,11 @@ Because those tasks are serial, an Argent Video cron callback must not run FFmpe
 
 ## Known initial limitations
 
-- No adaptive HLS/DASH ladder yet; version 0.1.0 uses progressive WebM/MP4 derivatives.
+- No adaptive HLS/DASH ladder yet; the current release uses progressive WebM/MP4 derivatives.
 - No percent-complete UI and no signal-based cancellation of a currently running FFmpeg process.
 - Automatic dispatch requires PHP `exec()`. Encoding requires `proc_open()`.
 - HTTP byte-range behavior remains a server/proxy concern and is not changed by this plugin.
-- Version 0.1.0 does not delete or relocate original videos.
+- The plugin does not delete or relocate original videos.
 
 ## Release validation
 
@@ -59,8 +60,10 @@ Before a release:
 
 - run PHP lint across runtime and test files;
 - run `php tests/run.php`;
+- run `php tests/smoke-load.php`;
+- run `php tests/ffmpeg-integration.php`;
 - run `git diff --check`;
-- run `bash build/build-plugin.sh 0.1.0` or the current version;
+- run `bash build/build-plugin.sh <current-version>`;
 - verify the ZIP has exactly one `wp-argent-video-processor/` top-level directory;
 - inspect `git status` and `git diff` before commit;
 - push an annotated `vX.Y.Z` tag only after the branch commit is pushed.

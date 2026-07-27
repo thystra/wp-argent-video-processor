@@ -44,7 +44,7 @@ wp argent-video scan --limit=500
 
 ## Release ZIPs
 
-Push an annotated semantic version tag such as `v0.1.0`. The release workflow validates the versions, lints PHP, runs the dependency-free tests, builds an installable ZIP whose only top-level directory is `wp-argent-video-processor/`, creates `SHA256SUMS`, and attaches both files to the GitHub release.
+Push an annotated semantic version tag such as `v0.1.1`. The release workflow validates the versions, lints PHP, runs the dependency-free tests, builds an installable ZIP whose only top-level directory is `wp-argent-video-processor/`, creates `SHA256SUMS`, and attaches both files to the GitHub release.
 
 ## Privacy
 
