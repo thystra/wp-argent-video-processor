@@ -53,8 +53,45 @@ final class Probe
      */
     public static function video_stream(array $probe): ?array
     {
+        return self::stream($probe, 'video');
+    }
+
+    /** @param array<string, mixed> $probe
+     *  @return array<string, mixed>|null
+     */
+    public static function audio_stream(array $probe): ?array
+    {
+        return self::stream($probe, 'audio');
+    }
+
+    /** @param array<string, mixed> $probe
+     *  @return array{0:int,1:int}
+     */
+    public static function display_dimensions(array $probe): array
+    {
+        $stream = self::video_stream($probe) ?? array();
+        $width = (int) ($stream['width'] ?? 0);
+        $height = (int) ($stream['height'] ?? 0);
+        $rotation = 0.0;
+        if (isset($stream['tags']['rotate'])) {
+            $rotation = (float) $stream['tags']['rotate'];
+        }
+        foreach ((array) ($stream['side_data_list'] ?? array()) as $side_data) {
+            if (is_array($side_data) && isset($side_data['rotation'])) {
+                $rotation = (float) $side_data['rotation'];
+            }
+        }
+        $normalized = abs(((int) round($rotation)) % 180);
+        return 90 === $normalized ? array($height, $width) : array($width, $height);
+    }
+
+    /** @param array<string, mixed> $probe
+     *  @return array<string, mixed>|null
+     */
+    private static function stream(array $probe, string $type): ?array
+    {
         foreach ((array) ($probe['streams'] ?? array()) as $stream) {
-            if (is_array($stream) && 'video' === ($stream['codec_type'] ?? '')) {
+            if (is_array($stream) && $type === ($stream['codec_type'] ?? '')) {
                 return $stream;
             }
         }

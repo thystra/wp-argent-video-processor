@@ -34,7 +34,7 @@ final class Queue
         }
     }
 
-    public function enqueue(int $attachment_id, bool $force = false): int
+    public function enqueue(int $attachment_id, bool $force = false, ?string $profile = null): int
     {
         if ('attachment' !== get_post_type($attachment_id)) {
             throw new RuntimeException('The supplied ID is not an attachment.');
@@ -51,13 +51,23 @@ final class Queue
         }
 
         $signature = hash('sha256', wp_normalize_path($source) . '|' . filesize($source) . '|' . filemtime($source));
-        $job_id = $this->jobs->enqueue(
-            $attachment_id,
-            $source,
-            $signature,
-            (string) Settings::get('profile', 'dual'),
-            $force
-        );
+        $job_profile = $profile ?? Settings::current_job_profile();
+        $existing = $this->jobs->find_by_attachment($attachment_id);
+
+        if (
+            ! $force
+            && is_array($existing)
+            && 'complete' === ($existing['status'] ?? '')
+            && hash_equals((string) $existing['source_signature'], $signature)
+            && hash_equals((string) $existing['profile'], $job_profile)
+        ) {
+            $job_id = (int) $existing['id'];
+            update_post_meta($attachment_id, '_argent_video_job_id', $job_id);
+            update_post_meta($attachment_id, '_argent_video_source_signature', $signature);
+            return $job_id;
+        }
+
+        $job_id = $this->jobs->enqueue($attachment_id, $source, $signature, $job_profile, $force);
 
         update_post_meta($attachment_id, '_argent_video_job_id', $job_id);
         update_post_meta($attachment_id, '_argent_video_status', 'queued');
@@ -71,14 +81,37 @@ final class Queue
     {
         $outputs = get_post_meta($attachment_id, '_argent_video_outputs', true);
         if (is_array($outputs)) {
-            foreach ($outputs as $output) {
-                if (is_array($output) && ! empty($output['path']) && is_file((string) $output['path'])) {
-                    @unlink((string) $output['path']);
-                }
-            }
+            $this->delete_outputs($outputs);
         }
 
         $this->jobs->delete_by_attachment($attachment_id);
+    }
+
+    /** @param array<string, mixed> $outputs */
+    private function delete_outputs(array $outputs): void
+    {
+        foreach ($outputs as $output) {
+            if (! is_array($output)) {
+                continue;
+            }
+            if (! empty($output['directory']) && is_dir((string) $output['directory'])) {
+                $this->remove_tree((string) $output['directory']);
+            } elseif (! empty($output['path']) && is_file((string) $output['path'])) {
+                @unlink((string) $output['path']);
+            }
+        }
+    }
+
+    private function remove_tree(string $directory): void
+    {
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST
+        );
+        foreach ($iterator as $item) {
+            $item->isDir() ? @rmdir($item->getPathname()) : @unlink($item->getPathname());
+        }
+        @rmdir($directory);
     }
 }
 

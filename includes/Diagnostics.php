@@ -26,6 +26,7 @@ final class Diagnostics
             );
         }
 
+        $checks[] = $this->ffmpeg_version($settings);
         $checks[] = array(
             'check'  => 'proc_open()',
             'status' => function_exists('proc_open') ? 'ok' : 'error',
@@ -42,7 +43,30 @@ final class Diagnostics
             'detail' => (string) wp_get_upload_dir()['basedir'],
         );
 
-        return array_merge($checks, $this->encoder_checks($settings));
+        $checks = array_merge($checks, $this->encoder_checks($settings));
+        if (! empty($settings['adaptive_hls'])) {
+            $checks = array_merge($checks, $this->hls_checks($settings));
+        }
+        $checks[] = $this->hls_js_check();
+        return $checks;
+    }
+
+    /** @param array<string, mixed> $settings
+     *  @return array{check:string,status:string,detail:string}
+     */
+    private function ffmpeg_version(array $settings): array
+    {
+        $ffmpeg = (string) ($settings['ffmpeg_path'] ?? '');
+        if (! is_executable($ffmpeg)) {
+            return array('check' => 'FFmpeg version', 'status' => 'error', 'detail' => 'Unavailable');
+        }
+        try {
+            $result = (new Process_Runner())->run(array($ffmpeg, '-version'));
+            $line = trim(strtok($result['stdout'], "\n") ?: 'Unknown version');
+            return array('check' => 'FFmpeg version', 'status' => 0 === $result['exit_code'] ? 'ok' : 'error', 'detail' => $line);
+        } catch (Throwable $error) {
+            return array('check' => 'FFmpeg version', 'status' => 'error', 'detail' => $error->getMessage());
+        }
     }
 
     /** @param array<string, mixed> $settings
@@ -52,8 +76,7 @@ final class Diagnostics
     {
         $profile = (string) ($settings['profile'] ?? 'dual');
         $required = array();
-
-        if (in_array($profile, array('compatibility', 'dual'), true)) {
+        if (in_array($profile, array('compatibility', 'dual'), true) || ! empty($settings['adaptive_hls'])) {
             $required['libx264'] = 'H.264 video';
             $required['aac'] = 'AAC audio';
         }
@@ -70,36 +93,52 @@ final class Diagnostics
         try {
             $result = (new Process_Runner())->run(array($ffmpeg, '-hide_banner', '-encoders'));
         } catch (Throwable $error) {
-            return array(array(
-                'check'  => 'FFmpeg encoders',
-                'status' => 'error',
-                'detail' => $error->getMessage(),
-            ));
+            return array(array('check' => 'FFmpeg encoders', 'status' => 'error', 'detail' => $error->getMessage()));
         }
-
-        if (0 !== $result['exit_code']) {
-            return array(array(
-                'check'  => 'FFmpeg encoders',
-                'status' => 'error',
-                'detail' => trim($result['stderr']),
-            ));
-        }
-
         $output = $result['stdout'] . "\n" . $result['stderr'];
         $checks = array();
         foreach ($required as $encoder => $description) {
-            $available = 1 === preg_match(
-                '/^\s*[A-Z\.]{6}\s+' . preg_quote($encoder, '/') . '\s/m',
-                $output
-            );
+            $available = 1 === preg_match('/^\s*[A-Z\.]{6}\s+' . preg_quote($encoder, '/') . '\s/m', $output);
             $checks[] = array(
                 'check'  => 'Encoder ' . $encoder,
                 'status' => $available ? 'ok' : 'error',
                 'detail' => $available ? $description . ' available' : $description . ' unavailable',
             );
         }
-
         return $checks;
+    }
+
+    /** @param array<string, mixed> $settings
+     *  @return list<array{check:string,status:string,detail:string}>
+     */
+    private function hls_checks(array $settings): array
+    {
+        $ffmpeg = (string) ($settings['ffmpeg_path'] ?? '');
+        if (! is_executable($ffmpeg)) {
+            return array();
+        }
+        try {
+            $muxers = (new Process_Runner())->run(array($ffmpeg, '-hide_banner', '-muxers'));
+            $help = (new Process_Runner())->run(array($ffmpeg, '-hide_banner', '-h', 'muxer=hls'));
+        } catch (Throwable $error) {
+            return array(array('check' => 'Adaptive HLS', 'status' => 'error', 'detail' => $error->getMessage()));
+        }
+        $muxer_available = 1 === preg_match('/^\s*E\s+hls\s/m', $muxers['stdout'] . $muxers['stderr']);
+        $help_output = $help['stdout'] . $help['stderr'];
+        $fmp4_available = str_contains($help_output, 'hls_segment_type') && str_contains($help_output, 'fmp4');
+        return array(
+            array('check' => 'HLS muxer', 'status' => $muxer_available ? 'ok' : 'error', 'detail' => $muxer_available ? 'Available' : 'Unavailable'),
+            array('check' => 'HLS fragmented MP4', 'status' => $fmp4_available ? 'ok' : 'error', 'detail' => $fmp4_available ? 'fMP4 segments available' : 'Required fMP4 options unavailable'),
+        );
+    }
+
+    /** @return array{check:string,status:string,detail:string} */
+    private function hls_js_check(): array
+    {
+        if (Player::has_local_hls_js()) {
+            return array('check' => 'HLS.js player', 'status' => 'ok', 'detail' => 'Local hls.js ' . Player::HLS_JS_VERSION);
+        }
+        return array('check' => 'HLS.js player', 'status' => 'warning', 'detail' => 'Local player absent; native HLS or progressive sources will be used');
     }
 }
 

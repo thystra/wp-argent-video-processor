@@ -15,39 +15,46 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-
-      - name: Show PHP version
-        run: php --version
-
+      - name: Read plugin version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(sed -n 's/^ \* Version: //p' wp-argent-video-processor.php | head -n1)"
+          if [[ ! "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid plugin version: ${VERSION}" >&2
+            exit 1
+          fi
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
       - name: Install build tools
-        run: sudo apt-get update && sudo apt-get install --yes rsync zip unzip ffmpeg
-
+        run: sudo apt-get update && sudo apt-get install --yes rsync zip unzip ffmpeg curl
       - name: PHP syntax check
         run: find . -type f -name '*.php' -not -path './dist/*' -print0 | sort -z | xargs -0 -n1 php -l
-
       - name: Run tests
         run: |
           php tests/run.php
           php tests/smoke-load.php
           php tests/ffmpeg-integration.php
-
+          node --check assets/js/argent-video-player.js
       - name: Check whitespace errors
         run: git diff --check
-
       - name: Build installable plugin ZIP
-        run: bash build/build-plugin.sh 0.1.1
-
-      - name: Inspect ZIP root
+        run: bash build/build-plugin.sh '${{ steps.version.outputs.version }}'
+      - name: Inspect ZIP root and HLS player
+        shell: bash
         run: |
-          unzip -Z1 dist/wp-argent-video-processor-0.1.1.zip | head -n 50
-          test "$(unzip -Z1 dist/wp-argent-video-processor-0.1.1.zip | awk -F/ 'NF {print $1}' | sort -u)" = 'wp-argent-video-processor'
-
+          set -euo pipefail
+          ZIP="dist/wp-argent-video-processor-${{ steps.version.outputs.version }}.zip"
+          test "$(unzip -Z1 "${ZIP}" | awk -F/ 'NF {print $1}' | sort -u)" = 'wp-argent-video-processor'
+          unzip -Z1 "${ZIP}" | grep -qx 'wp-argent-video-processor/assets/vendor/hls.min.js'
+          unzip -Z1 "${ZIP}" | grep -qx 'wp-argent-video-processor/assets/vendor/hls.LICENSE'
+          (cd dist && sha256sum --check SHA256SUMS)
       - name: Upload test package
         uses: actions/upload-artifact@v4
         with:
-          name: wp-argent-video-processor-0.1.1
+          name: wp-argent-video-processor-${{ steps.version.outputs.version }}
           path: |
-            dist/wp-argent-video-processor-0.1.1.zip
+            dist/wp-argent-video-processor-${{ steps.version.outputs.version }}.zip
             dist/SHA256SUMS
           if-no-files-found: error
 

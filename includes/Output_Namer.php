@@ -19,6 +19,11 @@ final class Output_Namer
         return $directory . DIRECTORY_SEPARATOR . $filename . '-argent-' . strtolower($safe_label) . '.' . strtolower($safe_extension);
     }
 
+    public static function adaptive_directory(string $source): string
+    {
+        return dirname($source) . DIRECTORY_SEPARATOR . pathinfo($source, PATHINFO_FILENAME) . '-argent-hls';
+    }
+
     public static function temporary(string $final_path): string
     {
         $directory = dirname($final_path);
@@ -27,6 +32,11 @@ final class Output_Namer
         $token = bin2hex(random_bytes(6));
 
         return $directory . DIRECTORY_SEPARATOR . $filename . '.tmp-' . $token . '.' . $extension;
+    }
+
+    public static function temporary_directory(string $final_directory): string
+    {
+        return $final_directory . '.tmp-' . bin2hex(random_bytes(6));
     }
 }
 

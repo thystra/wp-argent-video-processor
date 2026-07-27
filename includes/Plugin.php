@@ -26,14 +26,16 @@ final class Plugin
 
         $jobs = new Job_Repository();
         $queue = new Queue($jobs);
+        $bulk = new Bulk_Queue($jobs, $queue);
         $runner = new Process_Runner();
         $probe = new Probe($runner);
         $transcoder = new Transcoder($runner, $probe);
         $worker = new Worker($jobs, $transcoder);
         $launcher = new Worker_Launcher($jobs);
-        $renderer = new Renderer();
+        $player = new Player();
+        $renderer = new Renderer($player);
         $diagnostics = new Diagnostics();
-        $admin = new Admin($jobs, $queue, $launcher, $diagnostics);
+        $admin = new Admin($jobs, $queue, $bulk, $launcher, $diagnostics);
 
         add_filter('cron_schedules', array($this, 'cron_schedules'));
         add_action('plugins_loaded', array(Activator::class, 'maybe_upgrade'));
@@ -50,13 +52,14 @@ final class Plugin
             add_filter('manage_media_columns', array($admin, 'media_columns'));
             add_action('manage_media_custom_column', array($admin, 'media_column'), 10, 2);
             add_action('admin_post_argent_video_queue_attachment', array($admin, 'queue_action'));
+            add_action('admin_post_argent_video_bulk_queue', array($admin, 'bulk_action'));
             add_action('admin_post_argent_video_cancel_attachment', array($admin, 'cancel_action'));
             add_action('admin_post_argent_video_dispatch', array($admin, 'dispatch_action'));
             add_action('admin_notices', array($admin, 'notices'));
         }
 
         if (defined('WP_CLI') && WP_CLI) {
-            \WP_CLI::add_command('argent-video', new CLI_Command($jobs, $queue, $worker, $diagnostics));
+            \WP_CLI::add_command('argent-video', new CLI_Command($jobs, $queue, $bulk, $worker, $diagnostics));
         }
     }
 

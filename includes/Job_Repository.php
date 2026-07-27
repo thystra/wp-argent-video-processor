@@ -58,6 +58,7 @@ final class Job_Repository
             && is_array($existing)
             && 'complete' === ($existing['status'] ?? '')
             && hash_equals((string) $existing['source_signature'], $signature)
+            && hash_equals((string) $existing['profile'], $profile)
         ) {
             return (int) $existing['id'];
         }
@@ -87,14 +88,14 @@ final class Job_Repository
         $wpdb->insert(
             $this->table,
             array(
-                'attachment_id'   => $attachment_id,
-                'source_path'     => $source_path,
-                'source_signature'=> $signature,
-                'profile'         => $profile,
-                'status'          => 'queued',
-                'attempts'        => 0,
-                'created_at'      => $now,
-                'updated_at'      => $now,
+                'attachment_id'    => $attachment_id,
+                'source_path'      => $source_path,
+                'source_signature' => $signature,
+                'profile'          => $profile,
+                'status'           => 'queued',
+                'attempts'         => 0,
+                'created_at'       => $now,
+                'updated_at'       => $now,
             ),
             array('%d', '%s', '%s', '%s', '%s', '%d', '%s', '%s')
         );

@@ -16,6 +16,7 @@ final class CLI_Command
     public function __construct(
         private readonly Job_Repository $jobs,
         private readonly Queue $queue,
+        private readonly Bulk_Queue $bulk,
         private readonly Worker $worker,
         private readonly Diagnostics $diagnostics
     ) {
@@ -77,7 +78,7 @@ final class CLI_Command
      * : WordPress media attachment ID.
      *
      * [--force]
-     * : Reprocess even when the source signature is unchanged.
+     * : Reprocess even when the source signature and profile are unchanged.
      */
     public function enqueue(array $args, array $assoc_args): void
     {
@@ -115,35 +116,44 @@ final class CLI_Command
     }
 
     /**
-     * Queue existing video attachments that do not yet have jobs.
+     * Queue existing video attachments.
      *
      * ## OPTIONS
      *
+     * [--mode=<mode>]
+     * : `smart`, `adaptive`, or `all`. Default: `smart`.
+     *
+     * [--after=<YYYY-MM-DD>]
+     * : Include videos uploaded on or after this date.
+     *
+     * [--through=<YYYY-MM-DD>]
+     * : Include videos uploaded through this date.
+     *
      * [--limit=<count>]
-     * : Maximum attachments to inspect. Default 100.
+     * : Maximum attachments to inspect. Zero means all, capped at 5000.
      */
     public function scan(array $args, array $assoc_args): void
     {
         unset($args);
-        $limit = max(1, min(1000, (int) ($assoc_args['limit'] ?? 100)));
-        $query = new \WP_Query(array(
-            'post_type'      => 'attachment',
-            'post_status'    => 'inherit',
-            'post_mime_type' => 'video',
-            'posts_per_page' => $limit,
-            'fields'         => 'ids',
-            'orderby'        => 'ID',
-            'order'          => 'ASC',
-        ));
+        $mode = sanitize_key((string) ($assoc_args['mode'] ?? 'smart'));
+        $after = (string) ($assoc_args['after'] ?? '');
+        $through = (string) ($assoc_args['through'] ?? '');
+        $limit = max(0, min(5000, (int) ($assoc_args['limit'] ?? 0)));
 
-        $queued = 0;
-        foreach ($query->posts as $attachment_id) {
-            if (null === $this->jobs->find_by_attachment((int) $attachment_id)) {
-                $this->queue->enqueue((int) $attachment_id, false);
-                $queued++;
+        try {
+            $result = $this->bulk->queue($mode, $after, $through, $limit);
+            foreach ($result['errors'] as $error) {
+                WP_CLI::warning($error);
             }
+            WP_CLI::success(sprintf(
+                'Queued %d; skipped %d; failed %d.',
+                $result['queued'],
+                $result['skipped'],
+                $result['failed']
+            ));
+        } catch (RuntimeException $error) {
+            WP_CLI::error($error->getMessage());
         }
-        WP_CLI::success('Queued ' . $queued . ' existing video attachment(s).');
     }
 
     private function error_summary(string $message): string

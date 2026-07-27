@@ -9,6 +9,10 @@ namespace ArgentVideo;
 
 final class Renderer
 {
+    public function __construct(private readonly Player $player)
+    {
+    }
+
     /** @param array<string, mixed> $block */
     public function render_block(string $content, array $block): string
     {
@@ -38,12 +42,16 @@ final class Renderer
         if (! is_array($outputs) || [] === $outputs) {
             return $html;
         }
+        if (! empty($outputs['hls']['url'])) {
+            $this->player->enqueue();
+        }
 
         return (string) preg_replace_callback(
             '~<video\b([^>]*)>(.*?)</video>~is',
             function (array $matches) use ($outputs, $attachment_id): string {
                 $attributes = preg_replace('/\s+src\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', (string) $matches[1]);
                 $attributes = preg_replace('/\s+preload\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', (string) $attributes);
+                $attributes = preg_replace('/\s+data-argent-hls\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', (string) $attributes);
                 $inner = preg_replace('~<source\b[^>]*>~i', '', (string) $matches[2]);
                 $sources = '';
 
@@ -59,12 +67,17 @@ final class Renderer
 
                 if (empty($outputs['mp4'])) {
                     $original = wp_get_attachment_url($attachment_id);
+                    $original_mime = (string) get_post_mime_type($attachment_id);
                     if (is_string($original) && '' !== $original) {
-                        $sources .= '<source src="' . esc_url($original) . '" type="video/mp4">';
+                        $sources .= '<source src="' . esc_url($original) . '" type="' . esc_attr($original_mime ?: 'video/mp4') . '">';
                     }
                 }
 
-                return '<video' . $attributes . ' preload="metadata">' . $sources . $inner . '</video>';
+                $hls_attribute = ! empty($outputs['hls']['url'])
+                    ? ' data-argent-hls="' . esc_url((string) $outputs['hls']['url']) . '"'
+                    : '';
+
+                return '<video' . $attributes . $hls_attribute . ' preload="metadata">' . $sources . $inner . '</video>';
             },
             $html,
             1

@@ -1,7 +1,7 @@
 # /home/alan/src/wp-argent-video-processor/.gitignore
 /dist/
-*.log
-.DS_Store
-.phpunit.result.cache
+/assets/vendor/hls.min.js
+*.zip
+*.tar.gz
 
 # EOF: /home/alan/src/wp-argent-video-processor/.gitignore

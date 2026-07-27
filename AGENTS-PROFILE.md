@@ -1,4 +1,4 @@
-<!-- Source: /home/alan/src/argent-sentinel-collector/AGENTS-PROFILE.md -->
+<!-- /home/alan/src/wp-argent-video-processor/AGENTS-PROFILE.md -->
 # Alan’s Cross-Project Agent and Operator Preferences
 
 This file contains reusable personal workflow preferences and general host
@@ -121,6 +121,23 @@ other secrets here.
   worker itself; avoid blocking the shared central cron runner without an
   explicit concurrency and locking design.
 
+
+## System media tooling on `nidhoggur`
+
+- The system FFmpeg and FFprobe binaries at `/usr/bin/ffmpeg` and
+  `/usr/bin/ffprobe` were deliberately upgraded during Mastodon maintenance to
+  a current security-patched build in response to a CVE.
+- Server-side media applications should use the system-managed binaries,
+  inspect their actual version and capabilities dynamically, and avoid bundling
+  or pinning a private FFmpeg build unless that architecture is explicitly
+  reconsidered.
+- Argent Video Processor v0.1.1 is production-validated on
+  `wolfandraven.blog`: attachment 6878 completed VP9/Opus and H.264/AAC
+  processing, browser range delivery worked, and a real DSL test played for
+  more than two minutes without pauses.
+- Argent Video Processor v0.2.0 adds adaptive HLS and an administrator backlog
+  queue while retaining the one-at-a-time detached worker model.
+
 ## WordPress plugin packaging and releases
 
 - WordPress plugin repositories should include a GitHub Actions release workflow
@@ -151,4 +168,4 @@ other secrets here.
 - Project-specific host paths, package versions, and service behavior belong
   in that project’s `AGENTS.md`.
 
-<!-- EOF: /home/alan/src/argent-sentinel-collector/AGENTS-PROFILE.md -->
+<!-- EOF: /home/alan/src/wp-argent-video-processor/AGENTS-PROFILE.md -->
