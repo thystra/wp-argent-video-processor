@@ -1,0 +1,7 @@
+# /home/alan/src/wp-argent-video-processor/.gitignore
+/dist/
+*.log
+.DS_Store
+.phpunit.result.cache
+
+# EOF: /home/alan/src/wp-argent-video-processor/.gitignore

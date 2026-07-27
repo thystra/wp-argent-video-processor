@@ -1,0 +1,6 @@
+# /home/alan/src/wp-argent-video-processor/.gitattributes
+* text=auto eol=lf
+*.zip binary
+*.gz binary
+
+# EOF: /home/alan/src/wp-argent-video-processor/.gitattributes
