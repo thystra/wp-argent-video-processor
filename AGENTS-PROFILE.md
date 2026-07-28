@@ -176,3 +176,5 @@ other secrets here.
   in that project’s `AGENTS.md`.
 
 <!-- EOF: /home/alan/src/wp-argent-video-processor/AGENTS-PROFILE.md -->
+
+- Argent Video Processor v0.2.3 accounts for per-site PHP open_basedir restrictions: web diagnostics and detached-launch checks must not rely on PHP is_executable() for /usr/bin or /usr/local/bin. Use safely quoted shell probes; do not broaden open_basedir solely for this plugin.

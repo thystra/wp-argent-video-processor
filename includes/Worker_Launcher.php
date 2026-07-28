@@ -34,7 +34,7 @@ final class Worker_Launcher
     public function launch(): array
     {
         $wp = (string) Settings::get('wp_cli_path', '/usr/local/bin/wp');
-        if (! is_executable($wp)) {
+        if (! Shell_Probe::path_executable($wp)) {
             return $this->failure('WP-CLI is missing or not executable: ' . $wp);
         }
 
@@ -45,15 +45,15 @@ final class Worker_Launcher
         $log = trailingslashit(sys_get_temp_dir()) . 'wp-argent-video-processor-' . md5(ABSPATH) . '.log';
         $parts = array();
 
-        if (is_executable('/usr/bin/nohup')) {
+        if (Shell_Probe::path_executable('/usr/bin/nohup')) {
             $parts[] = escapeshellarg('/usr/bin/nohup');
         }
-        if (is_executable('/usr/bin/nice')) {
+        if (Shell_Probe::path_executable('/usr/bin/nice')) {
             $parts[] = escapeshellarg('/usr/bin/nice');
             $parts[] = '-n';
             $parts[] = (string) (int) Settings::get('nice_level', 10);
         }
-        if (is_executable('/usr/bin/ionice')) {
+        if (Shell_Probe::path_executable('/usr/bin/ionice')) {
             $parts[] = escapeshellarg('/usr/bin/ionice');
             $parts[] = '-c';
             $parts[] = (string) (int) Settings::get('ionice_class', 2);

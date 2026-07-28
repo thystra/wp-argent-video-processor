@@ -7,7 +7,6 @@ declare(strict_types=1);
 
 namespace ArgentVideo;
 
-use Throwable;
 
 final class Diagnostics
 {
@@ -17,12 +16,23 @@ final class Diagnostics
         $settings = Settings::all();
         $checks = array();
 
+        $checks[] = array(
+            'check'  => 'PHP execution context',
+            'status' => 'ok',
+            'detail' => PHP_SAPI . '; open_basedir=' . ('' !== trim((string) ini_get('open_basedir')) ? (string) ini_get('open_basedir') : '(none)'),
+        );
+
         foreach (array('ffmpeg_path' => 'FFmpeg', 'ffprobe_path' => 'FFprobe', 'wp_cli_path' => 'WP-CLI') as $key => $label) {
             $path = (string) $settings[$key];
+            $available = Shell_Probe::path_executable($path);
+            $detail = $path;
+            if ($available && Shell_Probe::stat_restricted($path)) {
+                $detail .= ' (executable; PHP filesystem stat restricted by open_basedir)';
+            }
             $checks[] = array(
                 'check'  => $label,
-                'status' => is_executable($path) ? 'ok' : 'error',
-                'detail' => $path,
+                'status' => $available ? 'ok' : 'error',
+                'detail' => $detail,
             );
         }
 
@@ -57,16 +67,9 @@ final class Diagnostics
     private function ffmpeg_version(array $settings): array
     {
         $ffmpeg = (string) ($settings['ffmpeg_path'] ?? '');
-        if (! is_executable($ffmpeg)) {
-            return array('check' => 'FFmpeg version', 'status' => 'error', 'detail' => 'Unavailable');
-        }
-        try {
-            $result = (new Process_Runner())->run(array($ffmpeg, '-version'));
-            $line = trim(strtok($result['stdout'], "\n") ?: 'Unknown version');
-            return array('check' => 'FFmpeg version', 'status' => 0 === $result['exit_code'] ? 'ok' : 'error', 'detail' => $line);
-        } catch (Throwable $error) {
-            return array('check' => 'FFmpeg version', 'status' => 'error', 'detail' => $error->getMessage());
-        }
+        $result = Shell_Probe::run(array($ffmpeg, '-version'));
+        $line = trim(strtok($result['output'], "\n") ?: 'Unknown version');
+        return array('check' => 'FFmpeg version', 'status' => $result['ok'] ? 'ok' : 'error', 'detail' => $line);
     }
 
     /** @param array<string, mixed> $settings
@@ -86,16 +89,15 @@ final class Diagnostics
         }
 
         $ffmpeg = (string) ($settings['ffmpeg_path'] ?? '');
-        if ([] === $required || ! is_executable($ffmpeg)) {
+        if ([] === $required || ! Shell_Probe::path_executable($ffmpeg)) {
             return array();
         }
 
-        try {
-            $result = (new Process_Runner())->run(array($ffmpeg, '-hide_banner', '-encoders'));
-        } catch (Throwable $error) {
-            return array(array('check' => 'FFmpeg encoders', 'status' => 'error', 'detail' => $error->getMessage()));
+        $result = Shell_Probe::run(array($ffmpeg, '-hide_banner', '-encoders'));
+        if (! $result['ok']) {
+            return array(array('check' => 'FFmpeg encoders', 'status' => 'error', 'detail' => $result['output']));
         }
-        $output = $result['stdout'] . "\n" . $result['stderr'];
+        $output = $result['output'];
         $checks = array();
         foreach ($required as $encoder => $description) {
             $available = 1 === preg_match('/^\s*[A-Z\.]{6}\s+' . preg_quote($encoder, '/') . '\s/m', $output);
@@ -114,17 +116,16 @@ final class Diagnostics
     private function hls_checks(array $settings): array
     {
         $ffmpeg = (string) ($settings['ffmpeg_path'] ?? '');
-        if (! is_executable($ffmpeg)) {
+        if (! Shell_Probe::path_executable($ffmpeg)) {
             return array();
         }
-        try {
-            $muxers = (new Process_Runner())->run(array($ffmpeg, '-hide_banner', '-muxers'));
-            $help = (new Process_Runner())->run(array($ffmpeg, '-hide_banner', '-h', 'muxer=hls'));
-        } catch (Throwable $error) {
-            return array(array('check' => 'Adaptive HLS', 'status' => 'error', 'detail' => $error->getMessage()));
+        $muxers = Shell_Probe::run(array($ffmpeg, '-hide_banner', '-muxers'));
+        $help = Shell_Probe::run(array($ffmpeg, '-hide_banner', '-h', 'muxer=hls'));
+        if (! $muxers['ok'] || ! $help['ok']) {
+            return array(array('check' => 'Adaptive HLS', 'status' => 'error', 'detail' => trim($muxers['output'] . "\n" . $help['output'])));
         }
-        $muxer_available = 1 === preg_match('/^\s*E\s+hls\s/m', $muxers['stdout'] . $muxers['stderr']);
-        $help_output = $help['stdout'] . $help['stderr'];
+        $muxer_available = 1 === preg_match('/^\s*E\s+hls\s/m', $muxers['output']);
+        $help_output = $help['output'];
         $fmp4_available = str_contains($help_output, 'hls_segment_type') && str_contains($help_output, 'fmp4');
         return array(
             array('check' => 'HLS muxer', 'status' => $muxer_available ? 'ok' : 'error', 'detail' => $muxer_available ? 'Available' : 'Unavailable'),

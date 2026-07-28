@@ -5,7 +5,7 @@
  * Plugin Name: Argent Video Processor
  * Plugin URI: https://github.com/thystra/wp-argent-video-processor
  * Description: Queues uploaded videos and creates adaptive and progressive streaming derivatives with FFmpeg while preserving the original attachment.
- * Version: 0.2.2
+ * Version: 0.2.3
  * Requires at least: 6.4
  * Requires PHP: 8.1
  * Author: Alan / Argent Wolf
@@ -21,7 +21,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-define('ARGENT_VIDEO_VERSION', '0.2.2');
+define('ARGENT_VIDEO_VERSION', '0.2.3');
 define('ARGENT_VIDEO_FILE', __FILE__);
 define('ARGENT_VIDEO_DIR', plugin_dir_path(__FILE__));
 define('ARGENT_VIDEO_URL', plugin_dir_url(__FILE__));
@@ -31,6 +31,7 @@ require_once ARGENT_VIDEO_DIR . 'includes/Activator.php';
 require_once ARGENT_VIDEO_DIR . 'includes/Job_Repository.php';
 require_once ARGENT_VIDEO_DIR . 'includes/Output_Namer.php';
 require_once ARGENT_VIDEO_DIR . 'includes/Command_Builder.php';
+require_once ARGENT_VIDEO_DIR . 'includes/Shell_Probe.php';
 require_once ARGENT_VIDEO_DIR . 'includes/Process_Runner.php';
 require_once ARGENT_VIDEO_DIR . 'includes/Probe.php';
 require_once ARGENT_VIDEO_DIR . 'includes/Adaptive_HLS.php';

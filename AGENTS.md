@@ -10,7 +10,7 @@ Read `AGENTS-PROFILE.md` first for Alan's cross-project operating conventions.
 - Stable WordPress plugin slug and release ZIP root: `wp-argent-video-processor`
 - Initial version: `0.1.0`
 - Last production-validated version: `0.1.1`
-- Current development version: `0.2.2`
+- Current development version: `0.2.3`
 - Normal deployment method: download the tag-built GitHub release ZIP and install or upgrade it through the WordPress web UI.
 - Tagged release builds must vendor the pinned hls.js runtime; do not use GitHub's automatically generated source archive as the WordPress package.
 - hls.js is pinned to exact stable version `1.6.16`. Do not use a broad `@1` range or canary packages; specific 1.7.0 alpha-canary package versions were reported as malicious in 2026.

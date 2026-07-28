@@ -9,11 +9,13 @@ require_once dirname(__DIR__) . '/includes/Output_Namer.php';
 require_once dirname(__DIR__) . '/includes/Command_Builder.php';
 require_once dirname(__DIR__) . '/includes/Probe.php';
 require_once dirname(__DIR__) . '/includes/Adaptive_HLS.php';
+require_once dirname(__DIR__) . '/includes/Shell_Probe.php';
 
 use ArgentVideo\Adaptive_HLS;
 use ArgentVideo\Command_Builder;
 use ArgentVideo\Output_Namer;
 use ArgentVideo\Probe;
+use ArgentVideo\Shell_Probe;
 
 $failures = array();
 $assert = static function (bool $condition, string $message) use (&$failures): void {
@@ -21,6 +23,12 @@ $assert = static function (bool $condition, string $message) use (&$failures): v
         $failures[] = $message;
     }
 };
+
+
+$assert(Shell_Probe::exec_available(), 'Shell executable probing requires exec() in the test environment.');
+$assert(Shell_Probe::path_executable(PHP_BINARY), 'Shell probe must find the active PHP binary.');
+$php_version = Shell_Probe::run(array(PHP_BINARY, '-v'));
+$assert($php_version['ok'] && str_contains($php_version['output'], 'PHP '), 'Shell probe must execute binaries without PHP filesystem stat calls.');
 
 $source = '/srv/uploads/video.phone.mp4';
 $assert('/srv/uploads/video.phone-argent-720p.mp4' === Output_Namer::derivative($source, '720p', 'mp4'), 'Progressive output naming failed.');
@@ -70,8 +78,8 @@ $assert(array(1080, 1920) === Probe::display_dimensions($rotated), 'Display dime
 
 $plugin = file_get_contents(dirname(__DIR__) . '/wp-argent-video-processor.php');
 $readme = file_get_contents(dirname(__DIR__) . '/readme.txt');
-$assert(false !== $plugin && str_contains($plugin, 'Version: 0.2.2'), 'Plugin header version must be 0.2.2.');
-$assert(false !== $readme && str_contains($readme, 'Stable tag: 0.2.2'), 'Stable tag must be 0.2.2.');
+$assert(false !== $plugin && str_contains($plugin, 'Version: 0.2.3'), 'Plugin header version must be 0.2.3.');
+$assert(false !== $readme && str_contains($readme, 'Stable tag: 0.2.3'), 'Stable tag must be 0.2.3.');
 
 if ([] !== $failures) {
     foreach ($failures as $failure) {

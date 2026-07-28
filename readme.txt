@@ -4,7 +4,7 @@ Tags: video, ffmpeg, hls, adaptive streaming, webm, media
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.2.2
+Stable tag: 0.2.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -60,7 +60,7 @@ Yes, generated derivatives and HLS renditions strip metadata by default. The sou
 
 == Changelog ==
 
-= 0.2.2 =
+= 0.2.3 =
 * Fix release ZIP builds when the exact npm package license text differs from the repository snapshot.
 * Validate the package SPDX identity and substantive Apache-2.0 text, then ship the package-provided license.
 * Keep all HLS.js release assets generated and untracked, and remove them from the source tree after packaging.

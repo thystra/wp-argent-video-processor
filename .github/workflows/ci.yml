@@ -37,6 +37,7 @@ jobs:
       - name: Run tests
         run: |
           php tests/run.php
+          php -d open_basedir="${GITHUB_WORKSPACE}:/tmp" tests/open-basedir.php
           php tests/smoke-load.php
           php tests/ffmpeg-integration.php
           bash tests/vendor-fetch.sh

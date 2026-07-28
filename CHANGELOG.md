@@ -1,6 +1,13 @@
 <!-- /home/alan/src/wp-argent-video-processor/CHANGELOG.md -->
 # Changelog
 
+## 0.2.3 - 2026-07-27
+
+- Fix binary diagnostics and detached worker launch under per-site PHP `open_basedir` restrictions.
+- Probe configured executables through safely quoted shell commands instead of PHP filesystem stat calls.
+- Report PHP SAPI and active `open_basedir` in diagnostics.
+
+
 ## 0.2.2 - 2026-07-27
 
 - Fix tagged-release HLS.js vendoring when the npm package license text differs from the repository snapshot.
