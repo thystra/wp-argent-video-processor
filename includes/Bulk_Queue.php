@@ -1,6 +1,6 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/includes/Bulk_Queue.php
+ * File: includes/Bulk_Queue.php
  */
 
 declare(strict_types=1);
@@ -142,4 +142,4 @@ final class Bulk_Queue
     }
 }
 
-// EOF: /home/alan/src/wp-argent-video-processor/includes/Bulk_Queue.php
+// EOF: includes/Bulk_Queue.php

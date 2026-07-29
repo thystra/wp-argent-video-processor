@@ -1,6 +1,6 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/includes/Output_Namer.php
+ * File: includes/Output_Namer.php
  */
 
 declare(strict_types=1);
@@ -40,4 +40,4 @@ final class Output_Namer
     }
 }
 
-// EOF: /home/alan/src/wp-argent-video-processor/includes/Output_Namer.php
+// EOF: includes/Output_Namer.php

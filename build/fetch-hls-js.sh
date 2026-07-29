@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# /home/alan/src/wp-argent-video-processor/build/fetch-hls-js.sh
+# File: build/fetch-hls-js.sh
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -187,4 +187,4 @@ validate_runtime_asset "${TARGET_FILE}" "${TARGET_LICENSE}"
 printf 'Fetched and verified hls.js %s (%s) from the npm registry: %s\n' \
   "${HLS_VERSION}" "${HLS_LICENSE}" "${TARGET_FILE}"
 
-# EOF: /home/alan/src/wp-argent-video-processor/build/fetch-hls-js.sh
+# EOF: build/fetch-hls-js.sh

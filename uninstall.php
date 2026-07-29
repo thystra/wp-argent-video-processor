@@ -1,6 +1,6 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/uninstall.php
+ * File: uninstall.php
  */
 
 declare(strict_types=1);
@@ -16,11 +16,20 @@ if (! defined('ARGENT_VIDEO_REMOVE_DATA_ON_UNINSTALL') || true !== ARGENT_VIDEO_
 }
 
 global $wpdb;
-$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}argent_video_jobs");
+
+// Explicit opt-in destructive uninstall must remove the plugin-owned queue table.
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange
+$wpdb->query(
+    $wpdb->prepare(
+        'DROP TABLE IF EXISTS %i',
+        $wpdb->prefix . 'argent_video_jobs'
+    )
+);
+// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange
 delete_option('argent_video_processor_settings');
 delete_option('argent_video_processor_db_version');
 delete_option('argent_video_processor_worker_lock');
 delete_option('argent_video_processor_last_worker_run');
 delete_option('argent_video_processor_last_launch');
 
-// EOF: /home/alan/src/wp-argent-video-processor/uninstall.php
+// EOF: uninstall.php

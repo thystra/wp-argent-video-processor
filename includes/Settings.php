@@ -1,6 +1,6 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/includes/Settings.php
+ * File: includes/Settings.php
  */
 
 declare(strict_types=1);
@@ -145,4 +145,4 @@ final class Settings
     }
 }
 
-// EOF: /home/alan/src/wp-argent-video-processor/includes/Settings.php
+// EOF: includes/Settings.php

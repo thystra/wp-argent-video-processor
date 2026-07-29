@@ -1,18 +1,16 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/wp-argent-video-processor.php
- *
- * Plugin Name: Argent Video Processor
- * Plugin URI: https://github.com/thystra/wp-argent-video-processor
- * Description: Queues uploaded videos and creates adaptive and progressive streaming derivatives with FFmpeg while preserving the original attachment.
- * Version: 0.2.3
+ * Plugin Name: ArgentWolf Video Processor
+ * Plugin URI: https://github.com/thystra/wp-argentwolf-video-processor
+ * Description: Queues WordPress videos and creates adaptive and progressive streaming derivatives with a detached FFmpeg worker while preserving the original attachment.
+ * Version: 0.3.0
  * Requires at least: 6.4
  * Requires PHP: 8.1
- * Author: Alan / Argent Wolf
- * Author URI: https://www.wolfandraven.blog
+ * Author: Alan Johnson
+ * Author URI: https://github.com/thystra
  * License: GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: wp-argent-video-processor
+ * Text Domain: argentwolf-video-processor
  */
 
 declare(strict_types=1);
@@ -21,7 +19,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-define('ARGENT_VIDEO_VERSION', '0.2.3');
+define('ARGENT_VIDEO_VERSION', '0.3.0');
 define('ARGENT_VIDEO_FILE', __FILE__);
 define('ARGENT_VIDEO_DIR', plugin_dir_path(__FILE__));
 define('ARGENT_VIDEO_URL', plugin_dir_url(__FILE__));
@@ -47,9 +45,15 @@ require_once ARGENT_VIDEO_DIR . 'includes/Admin.php';
 require_once ARGENT_VIDEO_DIR . 'includes/CLI_Command.php';
 require_once ARGENT_VIDEO_DIR . 'includes/Plugin.php';
 
-register_activation_hook(ARGENT_VIDEO_FILE, array(ArgentVideo\Activator::class, 'activate'));
-register_deactivation_hook(ARGENT_VIDEO_FILE, array(ArgentVideo\Activator::class, 'deactivate'));
+register_activation_hook(
+    ARGENT_VIDEO_FILE,
+    array(ArgentVideo\Activator::class, 'activate')
+);
+register_deactivation_hook(
+    ARGENT_VIDEO_FILE,
+    array(ArgentVideo\Activator::class, 'deactivate')
+);
 
 ArgentVideo\Plugin::instance()->boot();
 
-// EOF: /home/alan/src/wp-argent-video-processor/wp-argent-video-processor.php
+// EOF: argentwolf-video-processor.php

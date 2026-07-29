@@ -1,88 +1,184 @@
-=== Argent Video Processor ===
+=== ArgentWolf Video Processor ===
 Contributors: thystra
-Tags: video, ffmpeg, hls, adaptive streaming, webm, media
+Tags: video, ffmpeg, hls, adaptive streaming, media
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.2.3
+Stable tag: 0.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Queues uploaded videos and creates privacy-cleaned adaptive HLS and progressive streaming derivatives with a low-priority FFmpeg worker.
+Queues WordPress videos and creates local adaptive HLS and progressive derivatives with a detached FFmpeg worker.
 
 == Description ==
 
-Argent Video Processor preserves each original WordPress video attachment and creates smaller derivatives suitable for browser playback on connections ranging from slow DSL to broadband.
+ArgentWolf Video Processor preserves each original WordPress video attachment
+and creates smaller derivatives suitable for browser playback on connections
+ranging from slow DSL to broadband.
 
-The default configuration creates an adaptive HLS ladder at 360p, 480p, and 720p where the source resolution permits. It also creates an open VP9/Opus WebM progressive source and an H.264/AAC MP4 fallback. The MP4 derivative uses fast-start indexing. All generated outputs strip embedded GPS and device metadata by default and normalize rotation metadata into the encoded pixels.
+The default configuration creates:
 
-Native HLS is used where the browser supports it. Other compatible browsers use the locally bundled hls.js player. Progressive WebM and MP4 sources remain available as fallbacks.
+* an adaptive H.264/AAC HLS ladder at 360p, 480p, and 720p where the source resolution permits;
+* a VP9/Opus WebM progressive source;
+* an H.264/AAC MP4 progressive fallback with fast-start indexing.
 
-The plugin's five-minute WordPress event only launches a detached WP-CLI worker. FFmpeg does not run inside the shared WP-Cron callback. Backlog jobs and new uploads are processed one video at a time.
+Generated outputs strip embedded GPS, device, chapter, and other metadata by
+default and normalize rotation metadata into the encoded pixels. The original
+attachment is not modified.
+
+Native HLS is used where the browser supports it. Other compatible browsers use
+the locally bundled, pinned hls.js player. Progressive sources remain available
+as fallbacks.
+
+The plugin stores work in a database queue and processes one video at a time.
+Its recurring WordPress event only starts a detached WP-CLI worker; FFmpeg does
+not run inside the WP-Cron callback or an administrator web request.
+
+No video, metadata, or usage information is sent to an external processing
+service.
 
 == Installation ==
 
-1. Install a current security-maintained FFmpeg, FFprobe, and WP-CLI on the WordPress server.
-2. Upload the tagged-release ZIP through Plugins > Add New > Upload Plugin.
-3. Activate Argent Video Processor.
-4. Open Settings > Argent Video and review diagnostics.
-5. Upload a video normally or use Process existing videos to queue the current media backlog.
+1. Install current, security-maintained FFmpeg, FFprobe, and WP-CLI binaries on the WordPress server.
+2. Confirm PHP permits `proc_open()` and, for automatic dispatch, `exec()`.
+3. Upload the release ZIP through Plugins > Add New > Upload Plugin.
+4. Activate ArgentWolf Video Processor.
+5. Open Settings > ArgentWolf Video and review diagnostics and configured paths.
+6. Upload a video or use Process existing videos to queue the current Media Library backlog.
+
+This plugin requires server-administration access and may not work on restricted
+shared hosting.
 
 == Frequently Asked Questions ==
 
-= Are original videos deleted? =
+= Are original videos deleted or changed? =
 
-No. Argent Video Processor always preserves the original attachment.
+No. The original WordPress attachment is preserved. Processing creates separate
+derivatives.
+
+= Does metadata stripping sanitize the original? =
+
+No. Metadata stripping applies to generated derivatives and HLS renditions. The
+original upload may retain its original metadata.
 
 = What does adaptive streaming do? =
 
-The plugin produces multiple HLS renditions. The player can move between 360p, 480p, and 720p as available bandwidth and player size change.
+The plugin produces multiple HLS renditions. The player can move among available
+360p, 480p, and 720p renditions as bandwidth and player size change.
 
 = Can I process videos already in the Media Library? =
 
-Yes. Settings > Argent Video provides Smart queue, Add adaptive HLS only, and Force reprocess all operations, with an optional upload-date range.
+Yes. Settings > ArgentWolf Video provides Smart queue, Add adaptive HLS only,
+and Force reprocess all operations, with an optional upload-date range.
 
-= Is all processing performed in PHP? =
+= Does the plugin run FFmpeg during a web request? =
 
-No. WordPress manages the queue, while an external low-priority FFmpeg process performs the encode through a detached WP-CLI worker.
+No. Web and WP-Cron requests only queue or dispatch work. A detached WP-CLI
+worker performs the encode.
 
 = Which codecs are used? =
 
-Adaptive HLS uses H.264/AAC fragmented MP4 segments for broad browser compatibility. The default progressive fallbacks use VP9/Opus WebM first and H.264/AAC MP4 second. Either progressive output can be selected by itself.
+Adaptive HLS uses H.264/AAC fragmented MP4. The default progressive fallbacks
+use VP9/Opus WebM followed by H.264/AAC MP4.
 
 = Does the plugin bundle FFmpeg? =
 
-No. It uses the configured system FFmpeg and FFprobe binaries and checks their version, encoders, HLS muxer, and fragmented MP4 support in diagnostics.
+No. It uses administrator-configured system FFmpeg and FFprobe binaries and
+checks their version, codecs, HLS muxer, and fragmented-MP4 support.
 
-= Does the plugin remove location metadata? =
+= What happens if PHP exec() is disabled? =
 
-Yes, generated derivatives and HLS renditions strip metadata by default. The source attachment is not modified.
+Automatic detached dispatch is unavailable. An operator may invoke
+`wp argent-video worker --once` from a system scheduler. Encoding still requires
+`proc_open()`.
+
+= Does the plugin use an external service? =
+
+No. Video processing occurs on the WordPress server. The pinned hls.js runtime
+is bundled with the release and served locally.
+
+== Privacy ==
+
+The plugin creates derivative media files and stores queue state, processing
+status, output paths, and error information in the local WordPress installation.
+
+Generated derivatives strip source metadata when that setting is enabled. The
+original attachment remains unchanged and may retain its original metadata.
+
+The plugin contains no telemetry and does not send media or usage information to
+a remote processing service.
+
+== External software ==
+
+The plugin requires operator-installed FFmpeg, FFprobe, and WP-CLI binaries.
+These are local server programs, not remote services. Administrators are
+responsible for installing security-maintained versions and configuring their
+paths.
+
+The release bundles a pinned hls.js browser runtime under its Apache-2.0 license.
+
+== Developer notes ==
+
+The existing settings keys, queue table, attachment metadata, hook names, cron
+identifiers, Settings page slug, and `wp argent-video` command are retained for
+upgrade compatibility.
+
+The public plugin directory and main-file basename change in version 0.3.0.
+Administrators upgrading from version 0.2.3 should use the normal WordPress
+plugin-update workflow and confirm the plugin remains active.
+
+== Upgrade Notice ==
+
+= 0.3.0 =
+
+Renames the public plugin and package to ArgentWolf Video Processor and prepares
+the project for WordPress.org review while retaining existing data identifiers.
 
 == Changelog ==
 
+= 0.3.0 =
+
+* Resolve WordPress Plugin Check findings with identifier placeholders, WordPress file-deletion APIs, and narrowly documented worker, queue, and atomic-filesystem exceptions.
+* Standardize the public name as ArgentWolf Video Processor.
+* Change the directory slug, main filename, package root, and text domain to `argentwolf-video-processor`.
+* Retain existing options, attachment metadata, queue table, hooks, cron identifiers, namespace, admin page slug, and WP-CLI command.
+* Remove private operator and production material from the public repository.
+* Add public architecture, agent, milestone, privacy, and WordPress.org submission documentation.
+* Add Settings and GitHub project links to the plugin action row.
+* Add a Support development section to the settings page.
+* Change release packaging to an explicit runtime allowlist.
+
 = 0.2.3 =
-* Fix release ZIP builds when the exact npm package license text differs from the repository snapshot.
-* Validate the package SPDX identity and substantive Apache-2.0 text, then ship the package-provided license.
-* Keep all HLS.js release assets generated and untracked, and remove them from the source tree after packaging.
+
+* Fix binary diagnostics and detached worker launch under per-site PHP `open_basedir` restrictions.
+* Probe configured executables through safely quoted shell commands instead of PHP filesystem stat calls.
+* Report PHP SAPI and active `open_basedir` in diagnostics.
+
+= 0.2.2 =
+
+* Fix release ZIP builds when the npm package license text differs from the repository snapshot.
+* Validate the package SPDX identity and substantive Apache-2.0 license text.
+* Ship the license from the verified package and remove generated vendor files after packaging.
 
 = 0.2.1 =
-* Fix release ZIP builds by validating the exact hls.js npm package and its runtime version instead of searching the minified file for a human-readable banner.
-* Include the vendored player version and SHA-256 record in release packages.
-* Add a regression test for HLS.js vendoring.
+
+* Validate the exact hls.js npm package and runtime version.
+* Include the vendored player version and SHA-256 record.
+* Add an offline regression test for player vendoring.
 
 = 0.2.0 =
-* Add adaptive HLS with 360p, 480p, and 720p H.264/AAC fragmented MP4 renditions where source resolution permits.
-* Add native-HLS playback plus a pinned hls.js player, while retaining progressive WebM/MP4 fallbacks.
-* Add a WordPress admin backlog interface for smart processing, adaptive-only additions, or forced reprocessing of existing videos.
-* Add upload-date filtering and corresponding `wp argent-video scan` modes.
-* Add system FFmpeg version, encoder, HLS muxer, fragmented MP4, and player diagnostics.
-* Add real FFmpeg HLS integration tests and release-time hls.js vendoring.
+
+* Add adaptive HLS with 360p, 480p, and 720p fragmented-MP4 renditions.
+* Add native-HLS playback and a pinned local hls.js player.
+* Add administrator backlog operations and upload-date filtering.
+* Add system-binary, codec, HLS, and player diagnostics.
 
 = 0.1.1 =
-* Fix FFmpeg compatibility by relying on default input autorotation instead of passing the explicit `-autorotate` flag.
-* Report failed job and attachment details in manual WP-CLI worker output.
-* Check the encoders required by the configured profile in diagnostics.
-* Add a real FFmpeg integration test covering rotation normalization and location-metadata removal.
+
+* Fix FFmpeg autorotation compatibility.
+* Improve failed-job output and required-codec diagnostics.
+* Add a real FFmpeg integration test.
 
 = 0.1.0 =
-* Initial queue, detached worker, FFmpeg processing, validation, metadata stripping, render substitution, admin controls, WP-CLI commands, and tag release workflow.
+
+* Initial queue, detached worker, FFmpeg processing, validation, metadata stripping, render substitution, administration, CLI, and release workflow.

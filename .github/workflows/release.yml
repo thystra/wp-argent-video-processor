@@ -1,4 +1,4 @@
-# /home/alan/src/wp-argent-video-processor/.github/workflows/release.yml
+# File: .github/workflows/release.yml
 name: Build tagged release
 
 on:
@@ -17,6 +17,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Validate semantic version tag
         id: version
         shell: bash
@@ -28,14 +29,18 @@ jobs:
             exit 1
           fi
           echo "version=${TAG#v}" >> "${GITHUB_OUTPUT}"
+
       - name: Install build tools
         run: sudo apt-get update && sudo apt-get install --yes rsync zip unzip ffmpeg curl
+
       - name: Verify Node and npm
         run: |
           node --version
           npm --version
+
       - name: PHP syntax check
         run: find . -type f -name '*.php' -not -path './dist/*' -print0 | sort -z | xargs -0 -n1 php -l
+
       - name: Run tests
         run: |
           php tests/run.php
@@ -44,35 +49,41 @@ jobs:
           php tests/ffmpeg-integration.php
           bash tests/vendor-fetch.sh
           node --check assets/js/argent-video-player.js
+
       - name: Check whitespace errors
         run: git diff --check
+
       - name: Build release package
         run: bash build/build-plugin.sh '${{ steps.version.outputs.version }}'
+
       - name: Verify release contents
         shell: bash
         run: |
           set -euo pipefail
-          ZIP="dist/wp-argent-video-processor-${{ steps.version.outputs.version }}.zip"
+          ZIP="dist/argentwolf-video-processor-${{ steps.version.outputs.version }}.zip"
           test -f "${ZIP}"
-          test "$(unzip -Z1 "${ZIP}" | awk -F/ 'NF {print $1}' | sort -u)" = 'wp-argent-video-processor'
-          unzip -Z1 "${ZIP}" | grep -qx 'wp-argent-video-processor/assets/vendor/hls.min.js'
-          unzip -Z1 "${ZIP}" | grep -qx 'wp-argent-video-processor/assets/vendor/hls.LICENSE'
-          unzip -Z1 "${ZIP}" | grep -qx 'wp-argent-video-processor/assets/vendor/hls.VERSION'
-          unzip -Z1 "${ZIP}" | grep -qx 'wp-argent-video-processor/assets/vendor/hls.SHA256'
+          test "$(unzip -Z1 "${ZIP}" | awk -F/ 'NF {print $1}' | sort -u)" = 'argentwolf-video-processor'
+          unzip -Z1 "${ZIP}" | grep -qx 'argentwolf-video-processor/argentwolf-video-processor.php'
+          unzip -Z1 "${ZIP}" | grep -qx 'argentwolf-video-processor/assets/vendor/hls.min.js'
+          unzip -Z1 "${ZIP}" | grep -qx 'argentwolf-video-processor/assets/vendor/hls.LICENSE'
+          unzip -Z1 "${ZIP}" | grep -qx 'argentwolf-video-processor/assets/vendor/hls.VERSION'
+          unzip -Z1 "${ZIP}" | grep -qx 'argentwolf-video-processor/assets/vendor/hls.SHA256'
+          ! unzip -Z1 "${ZIP}" | grep -Eq '/(AGENTS|ARCHITECTURE|TODO|tests|build|ops|\.github)'
           (cd dist && sha256sum --check SHA256SUMS)
+
       - name: Create or update GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          ZIP="dist/wp-argent-video-processor-${{ steps.version.outputs.version }}.zip"
+          ZIP="dist/argentwolf-video-processor-${{ steps.version.outputs.version }}.zip"
           if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
             gh release upload "${GITHUB_REF_NAME}" "${ZIP}" dist/SHA256SUMS --clobber
           else
             gh release create "${GITHUB_REF_NAME}" "${ZIP}" dist/SHA256SUMS \
               --verify-tag --generate-notes \
-              --title "Argent Video Processor ${{ steps.version.outputs.version }}"
+              --title "ArgentWolf Video Processor ${{ steps.version.outputs.version }}"
           fi
 
-# EOF: /home/alan/src/wp-argent-video-processor/.github/workflows/release.yml
+# EOF: .github/workflows/release.yml

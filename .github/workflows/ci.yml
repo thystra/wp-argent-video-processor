@@ -1,4 +1,4 @@
-# /home/alan/src/wp-argent-video-processor/.github/workflows/ci.yml
+# File: .github/workflows/ci.yml
 name: CI
 
 on:
@@ -15,25 +15,30 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
       - name: Read plugin version
         id: version
         shell: bash
         run: |
           set -euo pipefail
-          VERSION="$(sed -n 's/^ \* Version: //p' wp-argent-video-processor.php | head -n1)"
+          VERSION="$(sed -n 's/^ \* Version: //p' argentwolf-video-processor.php | head -n1)"
           if [[ ! "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
             echo "Invalid plugin version: ${VERSION}" >&2
             exit 1
           fi
           echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+
       - name: Install build tools
         run: sudo apt-get update && sudo apt-get install --yes rsync zip unzip ffmpeg curl
+
       - name: Verify Node and npm
         run: |
           node --version
           npm --version
+
       - name: PHP syntax check
         run: find . -type f -name '*.php' -not -path './dist/*' -print0 | sort -z | xargs -0 -n1 php -l
+
       - name: Run tests
         run: |
           php tests/run.php
@@ -42,28 +47,34 @@ jobs:
           php tests/ffmpeg-integration.php
           bash tests/vendor-fetch.sh
           node --check assets/js/argent-video-player.js
+
       - name: Check whitespace errors
         run: git diff --check
+
       - name: Build installable plugin ZIP
         run: bash build/build-plugin.sh '${{ steps.version.outputs.version }}'
-      - name: Inspect ZIP root and HLS player
+
+      - name: Inspect ZIP
         shell: bash
         run: |
           set -euo pipefail
-          ZIP="dist/wp-argent-video-processor-${{ steps.version.outputs.version }}.zip"
-          test "$(unzip -Z1 "${ZIP}" | awk -F/ 'NF {print $1}' | sort -u)" = 'wp-argent-video-processor'
-          unzip -Z1 "${ZIP}" | grep -qx 'wp-argent-video-processor/assets/vendor/hls.min.js'
-          unzip -Z1 "${ZIP}" | grep -qx 'wp-argent-video-processor/assets/vendor/hls.LICENSE'
-          unzip -Z1 "${ZIP}" | grep -qx 'wp-argent-video-processor/assets/vendor/hls.VERSION'
-          unzip -Z1 "${ZIP}" | grep -qx 'wp-argent-video-processor/assets/vendor/hls.SHA256'
+          ZIP="dist/argentwolf-video-processor-${{ steps.version.outputs.version }}.zip"
+          test "$(unzip -Z1 "${ZIP}" | awk -F/ 'NF {print $1}' | sort -u)" = 'argentwolf-video-processor'
+          unzip -Z1 "${ZIP}" | grep -qx 'argentwolf-video-processor/argentwolf-video-processor.php'
+          unzip -Z1 "${ZIP}" | grep -qx 'argentwolf-video-processor/assets/vendor/hls.min.js'
+          unzip -Z1 "${ZIP}" | grep -qx 'argentwolf-video-processor/assets/vendor/hls.LICENSE'
+          unzip -Z1 "${ZIP}" | grep -qx 'argentwolf-video-processor/assets/vendor/hls.VERSION'
+          unzip -Z1 "${ZIP}" | grep -qx 'argentwolf-video-processor/assets/vendor/hls.SHA256'
+          ! unzip -Z1 "${ZIP}" | grep -Eq '/(AGENTS|ARCHITECTURE|TODO|tests|build|ops|\.github)'
           (cd dist && sha256sum --check SHA256SUMS)
+
       - name: Upload test package
         uses: actions/upload-artifact@v4
         with:
-          name: wp-argent-video-processor-${{ steps.version.outputs.version }}
+          name: argentwolf-video-processor-${{ steps.version.outputs.version }}
           path: |
-            dist/wp-argent-video-processor-${{ steps.version.outputs.version }}.zip
+            dist/argentwolf-video-processor-${{ steps.version.outputs.version }}.zip
             dist/SHA256SUMS
           if-no-files-found: error
 
-# EOF: /home/alan/src/wp-argent-video-processor/.github/workflows/ci.yml
+# EOF: .github/workflows/ci.yml

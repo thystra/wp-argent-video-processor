@@ -1,6 +1,6 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/includes/Shell_Probe.php
+ * File: includes/Shell_Probe.php
  */
 
 declare(strict_types=1);
@@ -66,4 +66,4 @@ final class Shell_Probe
     }
 }
 
-// EOF: /home/alan/src/wp-argent-video-processor/includes/Shell_Probe.php
+// EOF: includes/Shell_Probe.php

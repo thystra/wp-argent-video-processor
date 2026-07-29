@@ -1,4 +1,4 @@
-# /home/alan/src/wp-argent-video-processor/.gitignore
+# .gitignore
 /dist/
 /assets/vendor/hls.min.js
 /assets/vendor/hls.LICENSE
@@ -7,4 +7,4 @@
 *.zip
 *.tar.gz
 
-# EOF: /home/alan/src/wp-argent-video-processor/.gitignore
+# EOF: .gitignore

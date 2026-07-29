@@ -1,0 +1,91 @@
+# ArgentWolf Video Processor TODO
+
+## Milestone 1 — public repository cleanup
+
+- [ ] Remove the private `AGENTS-PROFILE.md`.
+- [ ] Remove production-specific `ops/` material from the public repository.
+- [ ] Remove private hostnames, user names, absolute paths, and deployment state.
+- [ ] Replace `AGENTS.md` with portable project instructions.
+- [ ] Add `ARCHITECTURE.md` and this `TODO.md`.
+- [ ] Confirm backups are written under
+      `~/src/backups/wp-argentwolf-video-processor-backups/`.
+
+## Milestone 2 — canonical ArgentWolf identity
+
+- [ ] Rename the public product to ArgentWolf Video Processor.
+- [ ] Rename the main file to `argentwolf-video-processor.php`.
+- [ ] Change the text domain and package root to
+      `argentwolf-video-processor`.
+- [ ] Update GitHub Actions, tests, and build tooling.
+- [ ] Use `Alan Johnson` as the plugin author.
+- [ ] Use WordPress.org contributor username `thystra`.
+- [ ] Retain established options, post meta, database table, hooks, cron
+      identifiers, namespace, admin page slug, and `wp argent-video` command.
+
+## Milestone 3 — support and documentation
+
+- [ ] Add Settings and GitHub links to the plugin action row.
+- [ ] Add a Support development section to the settings page.
+- [ ] Update `README.md`, `readme.txt`, and `CHANGELOG.md`.
+- [ ] Disclose system FFmpeg, FFprobe, WP-CLI, `proc_open()`, and `exec()`
+      requirements.
+- [ ] Clarify that metadata stripping applies to derivatives, not originals.
+- [ ] Document that the plugin uses no remote processing service or telemetry.
+
+## Milestone 4 — deterministic release package
+
+- [ ] Change the ZIP root to `argentwolf-video-processor/`.
+- [ ] Package from an explicit runtime allowlist.
+- [ ] Exclude agents, architecture, TODO, tests, CI, build, ops, and local files.
+- [ ] Preserve pinned hls.js identity, syntax, version, license, and checksum
+      validation.
+- [ ] Verify a single ZIP root and the required vendor files.
+- [ ] Produce and verify `SHA256SUMS`.
+
+## Milestone 5 — automated and static validation
+
+- [ ] Run PHP lint across source and tests.
+- [ ] Run dependency-free tests.
+- [ ] Run open_basedir regression tests.
+- [ ] Run smoke loading tests.
+- [ ] Run the real FFmpeg integration test.
+- [ ] Run the hls.js vendoring regression test.
+- [ ] Run JavaScript syntax validation.
+- [ ] Run `git diff --check`.
+- [ ] Run the official WordPress Plugin Check against the exact release.
+- [ ] Resolve or document every Plugin Check result.
+
+## Milestone 6 — runtime upgrade validation
+
+- [ ] Install `0.3.0` on a clean WordPress test site.
+- [ ] Upgrade a test site from active `0.2.3`.
+- [ ] Verify the old-to-new plugin basename transition.
+- [ ] Verify all settings are preserved.
+- [ ] Verify existing queue rows and attachment metadata are preserved.
+- [ ] Verify existing progressive and HLS outputs still render.
+- [ ] Verify new uploads queue and process.
+- [ ] Verify backlog modes and manual dispatch.
+- [ ] Verify the existing `wp argent-video` commands.
+- [ ] Verify scheduled dispatch does not run FFmpeg in WP-Cron.
+- [ ] Verify deactivation/reactivation and default non-destructive uninstall.
+- [ ] Verify settings and GitHub support links.
+
+## Milestone 7 — WordPress.org submission
+
+- [ ] Confirm requested slug `argentwolf-video-processor`.
+- [ ] Confirm contributor `thystra` and author `Alan Johnson`.
+- [ ] Confirm WordPress/PHP requirements and Tested up to values.
+- [ ] Audit GPL compatibility and bundled Apache-2.0 hls.js license.
+- [ ] Confirm no custom update checker, telemetry, secrets, or private paths.
+- [ ] Inspect the final ZIP manifest and checksum.
+- [ ] Commit and push the reviewed source.
+- [ ] Tag the approved release.
+- [ ] Submit the exact reviewed ZIP to WordPress.org.
+- [ ] Record review feedback without claiming approval prematurely.
+
+## Deferred enhancements
+
+- [ ] Progress reporting for active FFmpeg jobs.
+- [ ] Safe cancellation of an active FFmpeg process.
+- [ ] Optional additional adaptive codecs after compatibility review.
+- [ ] Multisite-specific administration and queue behavior.

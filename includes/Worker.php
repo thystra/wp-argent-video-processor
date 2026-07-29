@@ -1,6 +1,6 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/includes/Worker.php
+ * File: includes/Worker.php
  */
 
 declare(strict_types=1);
@@ -29,7 +29,6 @@ final class Worker
             throw new RuntimeException('Another Argent Video worker is already active.');
         }
 
-        @set_time_limit(0);
         $processed = 0;
         $failed = 0;
         $recovered = 0;
@@ -121,4 +120,4 @@ final class Worker
     }
 }
 
-// EOF: /home/alan/src/wp-argent-video-processor/includes/Worker.php
+// EOF: includes/Worker.php

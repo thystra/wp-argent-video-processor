@@ -1,6 +1,6 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/includes/Plugin.php
+ * File: includes/Plugin.php
  */
 
 declare(strict_types=1);
@@ -48,6 +48,7 @@ final class Plugin
 
         if (is_admin()) {
             add_action('admin_init', array($admin, 'register'));
+            add_filter('plugin_action_links_' . plugin_basename(ARGENT_VIDEO_FILE), array($admin, 'plugin_action_links'));
             add_action('admin_menu', array($admin, 'menu'));
             add_filter('manage_media_columns', array($admin, 'media_columns'));
             add_action('manage_media_custom_column', array($admin, 'media_column'), 10, 2);
@@ -70,10 +71,10 @@ final class Plugin
     {
         $schedules['argent_video_five_minutes'] = array(
             'interval' => 5 * MINUTE_IN_SECONDS,
-            'display'  => __('Every five minutes (Argent Video)', 'wp-argent-video-processor'),
+            'display'  => __('Every five minutes (ArgentWolf Video)', 'argentwolf-video-processor'),
         );
         return $schedules;
     }
 }
 
-// EOF: /home/alan/src/wp-argent-video-processor/includes/Plugin.php
+// EOF: includes/Plugin.php

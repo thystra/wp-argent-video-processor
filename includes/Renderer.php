@@ -1,6 +1,6 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/includes/Renderer.php
+ * File: includes/Renderer.php
  */
 
 declare(strict_types=1);
@@ -94,4 +94,4 @@ final class Renderer
     }
 }
 
-// EOF: /home/alan/src/wp-argent-video-processor/includes/Renderer.php
+// EOF: includes/Renderer.php

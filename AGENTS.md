@@ -1,107 +1,123 @@
-<!-- /home/alan/src/wp-argent-video-processor/AGENTS.md -->
-# Argent Video Processor project state
+# ArgentWolf Video Processor agent instructions
 
-Read `AGENTS-PROFILE.md` first for Alan's cross-project operating conventions.
+This file contains public, project-specific guidance for contributors and coding
+agents. Private hostnames, user names, deployment paths, and production state do
+not belong in this repository.
 
-## Repository and release
+## Canonical identity
 
-- GitHub: `https://github.com/thystra/wp-argent-video-processor`
-- Development checkout on `fafnir`: `/home/alan/src/wp-argent-video-processor`
-- Stable WordPress plugin slug and release ZIP root: `wp-argent-video-processor`
-- Initial version: `0.1.0`
-- Last production-validated version: `0.1.1`
-- Current development version: `0.2.3`
-- Normal deployment method: download the tag-built GitHub release ZIP and install or upgrade it through the WordPress web UI.
-- Tagged release builds must vendor the pinned hls.js runtime; do not use GitHub's automatically generated source archive as the WordPress package.
-- hls.js is pinned to exact stable version `1.6.16`. Do not use a broad `@1` range or canary packages; specific 1.7.0 alpha-canary package versions were reported as malicious in 2026.
-- Vendor the exact npm package from the official registry with scripts disabled; verify npm package identity, JavaScript syntax, runtime `Hls.version`, license, and generated SHA-256 record. Do not rely on a human-readable banner inside a minified bundle.
+- Product name: `ArgentWolf Video Processor`
+- GitHub repository: `https://github.com/thystra/wp-argentwolf-video-processor`
+- WordPress.org target slug: `argentwolf-video-processor`
+- Main plugin file: `argentwolf-video-processor.php`
+- Text domain: `argentwolf-video-processor`
+- PHP namespace retained for compatibility: `ArgentVideo`
+- WP-CLI command retained for compatibility: `wp argent-video`
+- Current submission-preparation version: `0.3.0`
 
-## Production target and validation
+Do not shorten the public product name to “Argent Video Processor.”
 
-- Host: `nidhoggur`
-- Site: `wolfandraven.blog`
-- WordPress path: `/var/www/wolfandraven.blog/public_html`
-- Site/PHP user: `wolfandraven`
-- WP-CLI commands must run as `wolfandraven`, not root.
-- Attachment `6878`, `20260725_160400.mp4`, completed the first full v0.1.1 dual-profile production conversion.
-- Browser validation confirmed the VP9 derivative was selected and served with HTTP 206 byte ranges.
-- The real-world DSL test played for more than two minutes without pauses and materially improved the original poor-playback complaint.
+## Compatibility invariants
 
-## System FFmpeg state
+The public rename must not reset or migrate established installation data without
+a separately reviewed migration. Retain the existing:
 
-- Use `/usr/bin/ffmpeg` and `/usr/bin/ffprobe` by default.
-- These are system-managed binaries that were deliberately upgraded during Mastodon maintenance to a current security-patched build in response to a CVE.
-- Do not bundle or pin an FFmpeg binary in this plugin unless that architecture is explicitly reconsidered.
-- Detect the actual installed version, encoders, HLS muxer, and fragmented MP4 support dynamically.
-- Required default encoders are `libx264`, `aac`, `libvpx-vp9`, and `libopus`.
+- `argent_video_processor_*` options;
+- `_argent_video_*` attachment metadata;
+- `argent_video_jobs` database table;
+- `argent_video_*` hooks and cron identifiers;
+- `wp argent-video` CLI command;
+- Settings page slug `argent-video-processor`.
 
-## Existing scheduler topology
+The directory and main-file rename requires an explicit upgrade test from the
+legacy `wp-argent-video-processor/wp-argent-video-processor.php` basename.
 
-Root runs `/root/scripts/wordpress-cron-jobs.sh` every five minutes. The script:
+## Architecture invariants
 
-1. runs `wp cron event run --due-now` serially as each site's PHP user for `allaboardacres`, `allaboardbouncers`, `wolfandraven`, and `lonewolftech`;
-2. additionally runs WooCommerce Action Scheduler for the first two sites;
-3. runs Nextcloud cron as `nextcloud`;
-4. runs the Friendica worker as `friendica`.
+- Preserve every original WordPress attachment.
+- Never run FFmpeg inside the recurring WP-Cron callback or an administrator web
+  request.
+- The recurring event may only inspect the queue and launch a detached worker.
+- Run at most one worker per WordPress site.
+- Claim jobs atomically and recover stale jobs safely.
+- Build output in temporary locations and validate it before atomic installation.
+- Strip generated-file metadata when enabled, but do not claim the original was
+  sanitized.
+- Keep progressive fallbacks when adaptive HLS is enabled.
+- Use administrator-configured system FFmpeg, FFprobe, and WP-CLI binaries. Do
+  not bundle FFmpeg.
+- Treat shell arguments as untrusted and quote or validate them before execution.
 
-Because those tasks are serial, an Argent Video cron callback must not run FFmpeg synchronously. The recurring callback checks the queue, starts a detached low-priority `wp argent-video worker --once` process as the current site user, and returns immediately.
+## Source layout
 
-## v0.2.0 behavior
+- `argentwolf-video-processor.php`: metadata, constants, dependency loading, and
+  bootstrap only.
+- `includes/`: runtime services.
+- `assets/js/`: locally maintained browser player integration.
+- `assets/vendor/`: generated, pinned hls.js release assets.
+- `build/`: deterministic release tooling.
+- `tests/`: dependency-free, open_basedir, smoke, vendor, and FFmpeg tests.
+- `.github/workflows/`: CI and tagged-release workflows.
+- `ARCHITECTURE.md`: design and invariants.
+- `TODO.md`: milestones and release gates.
 
-- `add_attachment` queues local `video/*` attachments.
-- The original attachment is always preserved.
-- Default progressive profile remains `dual`:
-  - VP9/Opus WebM, bounded to 1280x720, preferred progressive source;
-  - H.264/AAC MP4, bounded to 1280x720, `+faststart`, compatibility fallback.
-- Adaptive HLS is enabled by default:
-  - 360p, 480p, and 720p H.264/AAC renditions where source resolution permits;
-  - fragmented MP4 initialization and `.m4s` media segments;
-  - a master playlist used by native HLS or the pinned hls.js player.
-- Progressive sources remain in the video element if HLS is unavailable.
-- Generated outputs strip source metadata, including GPS/device metadata, by default.
-- FFmpeg default autorotation normalizes display orientation into encoded pixels.
-- One site worker runs at a time; job claims are atomic and stale processing jobs can be recovered.
-- Temporary outputs and HLS trees are validated before atomic installation.
-- Existing block content is not rewritten. `core/video` and video-shortcode output is filtered at render time.
-- Deleting an attachment deletes known progressive derivatives, its HLS directory, and its job row.
-- Uninstall preserves data unless `ARGENT_VIDEO_REMOVE_DATA_ON_UNINSTALL` is explicitly true.
+Prefer focused classes over adding substantial logic to the main plugin file.
 
-## Backlog behavior
+## Editing and patching
 
-Settings > Argent Video exposes:
+- Require a clean worktree before broad transformations.
+- Back up outside the checkout, preferably under
+  `~/src/backups/wp-argentwolf-video-processor-backups/`.
+- Build and validate a prospective tree before modifying the checkout.
+- Prefer complete-file installation or reviewed unified patches over global
+  substring-count anchors.
+- Do not add private operator information to public documentation.
+- Do not commit generated hls.js files or release ZIPs.
+- Preserve unexpected local work and stop rather than guessing.
 
-- **Smart queue:** process videos with no outputs; for videos with progressive outputs but no HLS, queue `adaptive-only` jobs.
-- **Add adaptive HLS only:** queue only completed videos with progressive output and no HLS.
-- **Force reprocess all:** recreate all outputs using current settings.
-- Optional upload-date limits.
+## Validation
 
-Backlog actions only populate the existing one-at-a-time queue. They do not run FFmpeg in the web request. CLI equivalents are `wp argent-video scan --mode=smart|adaptive|all`.
+Before commit:
 
-## Known limitations
+```bash
+find . -type f -name '*.php' -not -path './dist/*' -print0 |
+  sort -z |
+  xargs -0 -n1 php -l
 
-- No percent-complete UI and no signal-based cancellation of a currently running FFmpeg process.
-- Automatic dispatch requires PHP `exec()`. Encoding requires `proc_open()`.
-- HTTP range and correct `.m3u8`, `.m4s`, and `.mp4` content delivery remain web-server/proxy concerns.
-- HLS uses H.264/AAC for client compatibility even when the selected progressive profile is open-only.
-- HLS renditions are encoded sequentially in v0.2.0, then the next queued video begins.
-- The plugin does not delete or relocate original videos.
+php tests/run.php
+php -d open_basedir="${PWD}:/tmp" tests/open-basedir.php
+php tests/smoke-load.php
+php tests/ffmpeg-integration.php
+bash tests/vendor-fetch.sh
+node --check assets/js/argent-video-player.js
+git diff --check
+```
 
-## Release validation
+Build the installable ZIP with:
 
-Before a release:
+```bash
+bash build/build-plugin.sh 0.3.0
+```
 
-- run PHP lint across runtime and test files;
-- run `php tests/run.php`;
-- run `php tests/smoke-load.php`;
-- run `php tests/ffmpeg-integration.php`;
-- run `bash tests/vendor-fetch.sh`;
-- run `node --check assets/js/argent-video-player.js`;
-- run `git diff --check`;
-- run `bash build/fetch-hls-js.sh`;
-- run `bash build/build-plugin.sh <current-version>`;
-- verify the ZIP has exactly one `wp-argent-video-processor/` top-level directory;
-- verify the ZIP contains `assets/vendor/hls.min.js`, its license, `hls.VERSION`, and `hls.SHA256`;
-- inspect `git status` and `git diff` before commit;
-- push an annotated `vX.Y.Z` tag only after the branch commit is pushed.
+The release ZIP must contain one top-level `argentwolf-video-processor/`
+directory and only runtime files, `LICENSE`, and `readme.txt`. It must contain
+the pinned hls.js runtime, license, version, and checksum records.
 
-<!-- EOF: /home/alan/src/wp-argent-video-processor/AGENTS.md -->
+## WordPress.org release gate
+
+Before submission:
+
+- run the official Plugin Check plugin against the exact release ZIP;
+- resolve or document every finding;
+- test a clean installation;
+- test an upgrade from version `0.2.3`, including the basename transition;
+- verify settings, queue rows, attachment metadata, generated outputs, cron
+  scheduling, CLI commands, rendering, and uninstall behavior;
+- confirm no custom update checker or telemetry is present;
+- confirm all external requirements and privacy behavior are disclosed;
+- verify the settings page and plugin action links point to the GitHub project;
+- inspect the final package manifest and checksum;
+- tag only after the reviewed commit is pushed.
+
+GitHub publication, WordPress.org submission, WordPress.org approval, staging
+installation, and production deployment are separate states.

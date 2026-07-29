@@ -1,12 +1,15 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/includes/Job_Repository.php
+ * File: includes/Job_Repository.php
  */
 
 declare(strict_types=1);
 
 namespace ArgentVideo;
 
+// This class is the authoritative repository for a dedicated, highly mutable
+// worker queue table. Object caching would return stale coordination state.
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 final class Job_Repository
 {
     private string $table;
@@ -22,7 +25,7 @@ final class Job_Repository
     {
         global $wpdb;
         $row = $wpdb->get_row(
-            $wpdb->prepare("SELECT * FROM {$this->table} WHERE attachment_id = %d", $attachment_id),
+            $wpdb->prepare('SELECT * FROM %i WHERE attachment_id = %d', $this->table, $attachment_id),
             ARRAY_A
         );
 
@@ -34,7 +37,7 @@ final class Job_Repository
     {
         global $wpdb;
         $row = $wpdb->get_row(
-            $wpdb->prepare("SELECT * FROM {$this->table} WHERE id = %d", $job_id),
+            $wpdb->prepare('SELECT * FROM %i WHERE id = %d', $this->table, $job_id),
             ARRAY_A
         );
 
@@ -110,7 +113,10 @@ final class Job_Repository
 
         for ($attempt = 0; $attempt < 5; $attempt++) {
             $job_id = (int) $wpdb->get_var(
-                "SELECT id FROM {$this->table} WHERE status = 'queued' ORDER BY created_at ASC, id ASC LIMIT 1"
+                $wpdb->prepare(
+                    "SELECT id FROM %i WHERE status = 'queued' ORDER BY created_at ASC, id ASC LIMIT 1",
+                    $this->table
+                )
             );
 
             if ($job_id < 1) {
@@ -121,10 +127,11 @@ final class Job_Repository
             $now = current_time('mysql', true);
             $updated = $wpdb->query(
                 $wpdb->prepare(
-                    "UPDATE {$this->table}
+                    "UPDATE %i
                      SET status = 'processing', lock_token = %s, locked_at = %s,
                          started_at = %s, attempts = attempts + 1, updated_at = %s
                      WHERE id = %d AND status = 'queued'",
+                    $this->table,
                     $token,
                     $now,
                     $now,
@@ -186,9 +193,10 @@ final class Job_Repository
         global $wpdb;
         $updated = $wpdb->query(
             $wpdb->prepare(
-                "UPDATE {$this->table}
+                "UPDATE %i
                  SET status = 'cancelled', updated_at = %s
                  WHERE attachment_id = %d AND status IN ('queued', 'failed')",
+                $this->table,
                 current_time('mysql', true),
                 $attachment_id
             )
@@ -210,10 +218,11 @@ final class Job_Repository
 
         return (int) $wpdb->query(
             $wpdb->prepare(
-                "UPDATE {$this->table}
+                "UPDATE %i
                  SET status = 'queued', lock_token = NULL, locked_at = NULL,
                      error_message = %s, updated_at = %s
                  WHERE status = 'processing' AND locked_at < %s",
+                $this->table,
                 'Recovered after a stale worker lock.',
                 current_time('mysql', true),
                 $cutoff
@@ -225,11 +234,11 @@ final class Job_Repository
     {
         global $wpdb;
         if ('' === $status) {
-            return (int) $wpdb->get_var("SELECT COUNT(*) FROM {$this->table}");
+            return (int) $wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM %i', $this->table));
         }
 
         return (int) $wpdb->get_var(
-            $wpdb->prepare("SELECT COUNT(*) FROM {$this->table} WHERE status = %s", $status)
+            $wpdb->prepare('SELECT COUNT(*) FROM %i WHERE status = %s', $this->table, $status)
         );
     }
 
@@ -242,7 +251,8 @@ final class Job_Repository
         if ('' !== $status) {
             $rows = $wpdb->get_results(
                 $wpdb->prepare(
-                    "SELECT * FROM {$this->table} WHERE status = %s ORDER BY updated_at DESC LIMIT %d",
+                    "SELECT * FROM %i WHERE status = %s ORDER BY updated_at DESC LIMIT %d",
+                    $this->table,
                     $status,
                     $limit
                 ),
@@ -250,7 +260,7 @@ final class Job_Repository
             );
         } else {
             $rows = $wpdb->get_results(
-                $wpdb->prepare("SELECT * FROM {$this->table} ORDER BY updated_at DESC LIMIT %d", $limit),
+                $wpdb->prepare('SELECT * FROM %i ORDER BY updated_at DESC LIMIT %d', $this->table, $limit),
                 ARRAY_A
             );
         }
@@ -258,5 +268,6 @@ final class Job_Repository
         return is_array($rows) ? $rows : array();
     }
 }
+// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 
-// EOF: /home/alan/src/wp-argent-video-processor/includes/Job_Repository.php
+// EOF: includes/Job_Repository.php

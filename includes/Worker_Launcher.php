@@ -1,6 +1,6 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/includes/Worker_Launcher.php
+ * File: includes/Worker_Launcher.php
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ final class Worker_Launcher
             return $this->failure('PHP exec() is unavailable or disabled; run the WP-CLI worker from the system scheduler.');
         }
 
-        $log = trailingslashit(sys_get_temp_dir()) . 'wp-argent-video-processor-' . md5(ABSPATH) . '.log';
+        $log = trailingslashit(sys_get_temp_dir()) . 'argentwolf-video-processor-' . md5(ABSPATH) . '.log';
         $parts = array();
 
         if (Shell_Probe::path_executable('/usr/bin/nohup')) {
@@ -111,4 +111,4 @@ final class Worker_Launcher
     }
 }
 
-// EOF: /home/alan/src/wp-argent-video-processor/includes/Worker_Launcher.php
+// EOF: includes/Worker_Launcher.php

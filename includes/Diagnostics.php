@@ -1,6 +1,6 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/includes/Diagnostics.php
+ * File: includes/Diagnostics.php
  */
 
 declare(strict_types=1);
@@ -143,4 +143,4 @@ final class Diagnostics
     }
 }
 
-// EOF: /home/alan/src/wp-argent-video-processor/includes/Diagnostics.php
+// EOF: includes/Diagnostics.php

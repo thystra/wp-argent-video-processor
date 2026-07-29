@@ -1,6 +1,6 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/includes/Adaptive_HLS.php
+ * File: includes/Adaptive_HLS.php
  */
 
 declare(strict_types=1);
@@ -85,9 +85,11 @@ final class Adaptive_HLS
     {
         $contents = is_file($playlist) ? file_get_contents($playlist) : false;
         if (false === $contents || ! str_contains($contents, '#EXTM3U')) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Internal worker exception; escaped at every administrative display boundary.
             throw new RuntimeException('HLS media playlist was not created correctly: ' . $playlist);
         }
         if (! str_contains($contents, '#EXT-X-ENDLIST')) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Internal worker exception; escaped at every administrative display boundary.
             throw new RuntimeException('HLS media playlist is incomplete: ' . $playlist);
         }
         if (! str_contains($contents, '#EXT-X-MAP')) {
@@ -125,4 +127,4 @@ final class Adaptive_HLS
     }
 }
 
-// EOF: /home/alan/src/wp-argent-video-processor/includes/Adaptive_HLS.php
+// EOF: includes/Adaptive_HLS.php

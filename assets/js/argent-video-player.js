@@ -1,5 +1,5 @@
 /**
- * /home/alan/src/wp-argent-video-processor/assets/js/argent-video-player.js
+ * File: assets/js/argent-video-player.js
  */
 (function () {
     'use strict';
@@ -86,4 +86,4 @@
     }
 }());
 
-// EOF: /home/alan/src/wp-argent-video-processor/assets/js/argent-video-player.js
+// EOF: assets/js/argent-video-player.js

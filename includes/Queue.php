@@ -1,6 +1,6 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/includes/Queue.php
+ * File: includes/Queue.php
  */
 
 declare(strict_types=1);
@@ -97,7 +97,7 @@ final class Queue
             if (! empty($output['directory']) && is_dir((string) $output['directory'])) {
                 $this->remove_tree((string) $output['directory']);
             } elseif (! empty($output['path']) && is_file((string) $output['path'])) {
-                @unlink((string) $output['path']);
+                wp_delete_file((string) $output['path']);
             }
         }
     }
@@ -109,10 +109,16 @@ final class Queue
             \RecursiveIteratorIterator::CHILD_FIRST
         );
         foreach ($iterator as $item) {
-            $item->isDir() ? @rmdir($item->getPathname()) : @unlink($item->getPathname());
+            if ($item->isDir()) {
+                // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Attachment deletion removes only plugin-created derivative directories.
+                @rmdir($item->getPathname());
+            } else {
+                wp_delete_file($item->getPathname());
+            }
         }
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Attachment deletion removes only a plugin-created derivative directory.
         @rmdir($directory);
     }
 }
 
-// EOF: /home/alan/src/wp-argent-video-processor/includes/Queue.php
+// EOF: includes/Queue.php

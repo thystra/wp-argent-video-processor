@@ -1,6 +1,6 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/tests/open-basedir.php
+ * File: tests/open-basedir.php
  */
 
 declare(strict_types=1);
@@ -29,4 +29,4 @@ if (! $result['ok'] || ! str_contains($result['output'], 'PHP ')) {
 
 fwrite(STDOUT, "open_basedir shell-probe regression test passed.\n");
 
-// EOF: /home/alan/src/wp-argent-video-processor/tests/open-basedir.php
+// EOF: tests/open-basedir.php

@@ -1,6 +1,6 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/includes/Transcoder.php
+ * File: includes/Transcoder.php
  */
 
 declare(strict_types=1);
@@ -27,6 +27,7 @@ final class Transcoder
         $source = (string) get_attached_file($attachment_id, true);
 
         if ('' === $source || ! is_file($source) || ! is_readable($source)) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Internal worker exception; escaped at every administrative display boundary.
             throw new RuntimeException('Source video is missing or unreadable: ' . $source);
         }
 
@@ -85,9 +86,15 @@ final class Transcoder
             }
 
             foreach ($plans as $key => $plan) {
-                if (is_file($plan['final']) && ! @unlink($plan['final'])) {
-                    throw new RuntimeException('Could not replace existing derivative: ' . $plan['final']);
+                if (is_file($plan['final'])) {
+                    wp_delete_file($plan['final']);
+                    clearstatcache(true, $plan['final']);
+                    if (is_file($plan['final'])) {
+                        // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Internal worker exception; escaped at every administrative display boundary.
+                        throw new RuntimeException('Could not replace existing derivative: ' . $plan['final']);
+                    }
                 }
+                // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Atomic same-filesystem promotion prevents partially installed validated media.
                 if (! @rename($plan['temporary'], $plan['final'])) {
                     throw new RuntimeException('Could not move validated derivative into place: ' . $plan['final']);
                 }
@@ -112,7 +119,7 @@ final class Transcoder
         } catch (Throwable $error) {
             foreach ($temporary_paths as $temporary_path) {
                 if (is_file($temporary_path)) {
-                    @unlink($temporary_path);
+                    wp_delete_file($temporary_path);
                 }
             }
             foreach ($temporary_directories as $temporary_directory) {
@@ -155,6 +162,7 @@ final class Transcoder
         $final_directory = Output_Namer::adaptive_directory($source);
         $temporary_directory = Output_Namer::temporary_directory($final_directory);
         if (! wp_mkdir_p($temporary_directory)) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Internal worker exception; escaped at every administrative display boundary.
             throw new RuntimeException('Could not create temporary HLS directory: ' . $temporary_directory);
         }
 
@@ -226,17 +234,21 @@ final class Transcoder
     {
         $stream = Probe::video_stream($output);
         if (null === $stream) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Internal worker exception; escaped at every administrative display boundary.
             throw new RuntimeException('Generated ' . $type . ' file has no video stream.');
         }
         $expected_codec = 'mp4' === $type ? 'h264' : 'vp9';
         if ($expected_codec !== ($stream['codec_name'] ?? '')) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Internal worker exception; escaped at every administrative display boundary.
             throw new RuntimeException('Generated ' . $type . ' file has unexpected codec.');
         }
         $this->validate_duration($source, $output, $type);
         if ((int) ($stream['width'] ?? 0) > (int) $settings['max_width']) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Internal worker exception; escaped at every administrative display boundary.
             throw new RuntimeException('Generated ' . $type . ' width exceeds the configured maximum.');
         }
         if ((int) ($stream['height'] ?? 0) > (int) $settings['max_height']) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Internal worker exception; escaped at every administrative display boundary.
             throw new RuntimeException('Generated ' . $type . ' height exceeds the configured maximum.');
         }
     }
@@ -249,10 +261,12 @@ final class Transcoder
     {
         $stream = Probe::video_stream($output);
         if (null === $stream || 'h264' !== ($stream['codec_name'] ?? '')) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Internal worker exception; escaped at every administrative display boundary.
             throw new RuntimeException('Generated HLS ' . $rendition['label'] . ' rendition has no H.264 video stream.');
         }
         $this->validate_duration($source, $output, 'HLS ' . $rendition['label']);
         if ((int) ($stream['width'] ?? 0) > (int) $rendition['max_width'] || (int) ($stream['height'] ?? 0) > (int) $rendition['max_height']) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Internal worker exception; escaped at every administrative display boundary.
             throw new RuntimeException('Generated HLS ' . $rendition['label'] . ' rendition exceeds its maximum dimensions.');
         }
     }
@@ -265,6 +279,7 @@ final class Transcoder
         $duration_delta = abs(Probe::duration($source) - Probe::duration($output));
         $allowed_delta = max(2.0, Probe::duration($source) * 0.01);
         if ($duration_delta > $allowed_delta) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Internal worker exception; escaped at every administrative display boundary.
             throw new RuntimeException('Generated ' . $label . ' duration differs too much from the source.');
         }
     }
@@ -292,12 +307,15 @@ final class Transcoder
         $backup = '';
         if (is_dir($final)) {
             $backup = $final . '.old-' . bin2hex(random_bytes(4));
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Atomic directory swap preserves the last valid HLS tree.
             if (! @rename($final, $backup)) {
                 throw new RuntimeException('Could not preserve the existing HLS directory before replacement.');
             }
         }
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Atomic directory promotion prevents partially installed HLS output.
         if (! @rename($temporary, $final)) {
             if ('' !== $backup) {
+                // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Atomic rollback restores the previously validated HLS tree.
                 @rename($backup, $final);
             }
             throw new RuntimeException('Could not move validated HLS output into place.');
@@ -329,8 +347,14 @@ final class Transcoder
             \RecursiveIteratorIterator::CHILD_FIRST
         );
         foreach ($iterator as $item) {
-            $item->isDir() ? @rmdir($item->getPathname()) : @unlink($item->getPathname());
+            if ($item->isDir()) {
+                // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Recursive worker cleanup removes only plugin-created output directories.
+                @rmdir($item->getPathname());
+            } else {
+                wp_delete_file($item->getPathname());
+            }
         }
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Recursive worker cleanup removes only a plugin-created output directory.
         @rmdir($directory);
     }
 
@@ -341,4 +365,4 @@ final class Transcoder
     }
 }
 
-// EOF: /home/alan/src/wp-argent-video-processor/includes/Transcoder.php
+// EOF: includes/Transcoder.php

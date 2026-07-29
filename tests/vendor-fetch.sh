@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# /home/alan/src/wp-argent-video-processor/tests/vendor-fetch.sh
+# File: tests/vendor-fetch.sh
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -76,4 +76,4 @@ fi
 
 printf 'Vendor fetch regression test passed.\n'
 
-# EOF: /home/alan/src/wp-argent-video-processor/tests/vendor-fetch.sh
+# EOF: tests/vendor-fetch.sh

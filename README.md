@@ -1,52 +1,69 @@
-<!-- /home/alan/src/wp-argent-video-processor/README.md -->
-# Argent Video Processor
+# ArgentWolf Video Processor
 
-Argent Video Processor is a lightweight WordPress plugin that queues uploaded videos and creates privacy-cleaned, streaming-friendly derivatives on the WordPress server with the system FFmpeg and FFprobe binaries.
+ArgentWolf Video Processor is a self-hosted WordPress plugin that queues video
+attachments and creates privacy-cleaned, streaming-friendly derivatives with
+the server's FFmpeg and FFprobe binaries.
 
-The original attachment remains untouched. Processed copies:
+The original attachment remains untouched. Generated outputs can:
 
-- remove GPS, device, chapter, and other embedded metadata by default;
-- normalize stored display rotation into the encoded pixels;
-- reduce resolution and bitrate for practical progressive playback;
-- place MP4 indexing data at the front of compatibility files with `+faststart`;
-- optionally create an open VP9/Opus WebM source ahead of the MP4 fallback;
-- create an adaptive HLS ladder with fragmented MP4 segments;
-- replace Video block and WordPress video-shortcode sources only at render time.
+- strip GPS, device, chapter, and other embedded metadata;
+- normalize display rotation into encoded pixels;
+- reduce resolution and bitrate for practical web playback;
+- produce an H.264/AAC adaptive HLS ladder;
+- produce VP9/Opus WebM and H.264/AAC MP4 progressive fallbacks;
+- place MP4 indexing data at the front of compatibility files;
+- replace Video block and shortcode sources only at render time.
+
+## Processing model
+
+The plugin stores jobs in a WordPress database queue and runs one worker per
+site. Its recurring WordPress event only starts a detached WP-CLI worker and
+returns; FFmpeg does not run inside the WP-Cron callback or settings-page
+request.
+
+Backlog actions queue work but do not perform encoding synchronously.
 
 ## Default output
 
-The default configuration produces:
+Where the source dimensions permit, the default configuration creates:
 
-1. An adaptive HLS master playlist with 360p, 480p, and 720p H.264/AAC renditions where the source resolution permits. The browser can switch renditions as available bandwidth changes.
-2. A 720p-bounded VP9/Opus WebM progressive fallback.
-3. A 720p-bounded H.264/AAC MP4 progressive fallback.
+1. 360p, 480p, and 720p H.264/AAC fragmented-MP4 HLS renditions;
+2. a 720p-bounded VP9/Opus WebM progressive fallback;
+3. a 720p-bounded H.264/AAC MP4 progressive fallback.
 
-The HLS player uses native browser HLS support where available and a locally vendored, pinned hls.js build elsewhere. Progressive files remain in the rendered `<video>` element as a fallback when adaptive playback is unavailable.
-
-Only one worker runs per site. FFmpeg inherits a configurable CPU nice level and I/O priority. The recurring WordPress event merely starts a detached WP-CLI worker and returns; it does not encode inside the shared WP-Cron process.
-
-## Process existing videos
-
-Settings > Argent Video includes a backlog section with three operations:
-
-- **Smart queue:** process videos that have no derivatives and add HLS to completed videos without recreating valid progressive files.
-- **Add adaptive HLS only:** add HLS to completed videos that do not already have it.
-- **Force reprocess all:** recreate every selected video using the current settings.
-
-An optional upload-date range can limit the backlog. The web request only adds jobs to the database queue. The existing detached one-at-a-time worker performs the actual encoding.
+Native browser HLS is used when available. Other compatible browsers use the
+locally bundled and pinned hls.js runtime.
 
 ## Requirements
 
-- WordPress 6.4 or newer; tested through WordPress 7.0.
+- WordPress 6.4 or newer.
 - PHP 8.1 or newer.
-- WP-CLI, default `/usr/local/bin/wp`.
-- A current security-maintained system FFmpeg and FFprobe, defaults `/usr/bin/ffmpeg` and `/usr/bin/ffprobe`.
-- FFmpeg encoders: `libx264`, `aac`, plus `libvpx-vp9` and `libopus` when the open progressive profile is enabled.
-- FFmpeg HLS muxer with fragmented MP4 segment support when adaptive HLS is enabled.
-- PHP `proc_open()` for encodes.
-- PHP `exec()` for automatic detached dispatch. When `exec()` is disabled, run `wp argent-video worker --once` from the system scheduler.
+- WP-CLI.
+- A current, security-maintained FFmpeg and FFprobe installation.
+- `libx264` and `aac`.
+- `libvpx-vp9` and `libopus` when WebM output is enabled.
+- The FFmpeg HLS muxer with fragmented-MP4 support when adaptive HLS is enabled.
+- PHP `proc_open()` for encoding.
+- PHP `exec()` for automatic detached dispatch.
 
-The plugin does not bundle or pin FFmpeg. Diagnostics inspect the configured system binaries and required capabilities at runtime.
+When `exec()` is disabled, an operator may run
+`wp argent-video worker --once` from a system scheduler.
+
+This plugin is intended for operators who can install and maintain server-side
+media software. It does not bundle FFmpeg and may not be suitable for restricted
+shared hosting.
+
+## Administration
+
+**Settings > ArgentWolf Video** provides:
+
+- queue and worker status;
+- smart, adaptive-only, and force-reprocess backlog operations;
+- diagnostics for binaries, codecs, HLS, and the browser player;
+- output, path, and process-priority settings;
+- manual worker launch;
+- WP-CLI examples;
+- a link to the GitHub project for support and development.
 
 ## WP-CLI
 
@@ -62,18 +79,32 @@ wp argent-video worker --once
 wp argent-video worker --limit=3
 ```
 
-## Release ZIPs
-
-Push an annotated semantic version tag such as `v0.2.3`. The release workflow validates versions, lints PHP, runs dependency-free and real FFmpeg tests, fetches the pinned hls.js player, builds an installable ZIP whose only top-level directory is `wp-argent-video-processor/`, creates `SHA256SUMS`, and attaches both files to the GitHub release.
-
-Use the ZIP attached to the GitHub Release, not GitHub's automatically generated source archives.
+The `argent-video` command name is retained for compatibility.
 
 ## Privacy
 
-Metadata removal applies to generated progressive derivatives and adaptive renditions, not to the original uploaded file. The original remains in the WordPress media library unless the operator removes it separately.
+Metadata removal applies to generated derivatives and adaptive renditions. The
+original uploaded attachment is preserved and may retain its original metadata.
+
+The plugin does not upload videos or usage information to an external service
+and contains no telemetry. hls.js is fetched only during controlled release
+builds, verified, and served locally from the installed plugin.
+
+## Development and releases
+
+Repository-only documentation and tests are excluded from the installable ZIP.
+The release package has one top-level `argentwolf-video-processor/` directory.
+
+Use the ZIP attached to a tagged GitHub release or the WordPress.org package,
+not GitHub's automatically generated source archive.
+
+## Support development
+
+Project source, issues, and funding links are available at:
+
+`https://github.com/thystra/wp-argentwolf-video-processor`
 
 ## License
 
-GPL-2.0-or-later. The distributed hls.js runtime is provided under its Apache-2.0 license in `assets/vendor/hls.LICENSE`.
-
-<!-- EOF: /home/alan/src/wp-argent-video-processor/README.md -->
+The plugin is GPL-2.0-or-later. The distributed hls.js runtime is provided under
+the Apache-2.0 license included as `assets/vendor/hls.LICENSE`.

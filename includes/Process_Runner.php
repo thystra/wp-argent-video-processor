@@ -1,6 +1,6 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/includes/Process_Runner.php
+ * File: includes/Process_Runner.php
  */
 
 declare(strict_types=1);
@@ -22,6 +22,7 @@ final class Process_Runner
         }
 
         if ([] === $command || ! is_executable($command[0])) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Internal worker exception; escaped at every administrative display boundary.
             throw new RuntimeException('Executable is missing or not executable: ' . ($command[0] ?? '(empty command)'));
         }
 
@@ -41,18 +42,19 @@ final class Process_Runner
             2 => array('file', $stderr_path, 'w'),
         );
 
+        // phpcs:ignore Generic.PHP.ForbiddenFunctions.Found -- External FFmpeg/FFprobe execution is the plugin's documented core function; bypass_shell and argument arrays prevent shell parsing.
         $process = proc_open($command, $descriptors, $pipes, null, null, array('bypass_shell' => true));
         if (! is_resource($process)) {
-            @unlink($stdout_path);
-            @unlink($stderr_path);
+            wp_delete_file($stdout_path);
+            wp_delete_file($stderr_path);
             throw new RuntimeException('Could not start external process.');
         }
 
         $exit_code = proc_close($process);
         $stdout = $this->read_tail($stdout_path, 1048576);
         $stderr = $this->read_tail($stderr_path, 1048576);
-        @unlink($stdout_path);
-        @unlink($stderr_path);
+        wp_delete_file($stdout_path);
+        wp_delete_file($stderr_path);
 
         return array(
             'exit_code' => (int) $exit_code,
@@ -104,6 +106,7 @@ final class Process_Runner
             return '';
         }
 
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Bounded tail reading avoids loading potentially large FFmpeg logs into memory.
         $handle = fopen($path, 'rb');
         if (false === $handle) {
             return '';
@@ -114,10 +117,11 @@ final class Process_Runner
         }
 
         $content = stream_get_contents($handle);
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closes the bounded FFmpeg log stream opened above.
         fclose($handle);
 
         return false === $content ? '' : $content;
     }
 }
 
-// EOF: /home/alan/src/wp-argent-video-processor/includes/Process_Runner.php
+// EOF: includes/Process_Runner.php

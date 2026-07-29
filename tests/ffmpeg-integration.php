@@ -1,6 +1,6 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/tests/ffmpeg-integration.php
+ * File: tests/ffmpeg-integration.php
  */
 
 declare(strict_types=1);
@@ -158,4 +158,4 @@ if ([] !== $failures) {
 }
 fwrite(STDOUT, "FFmpeg integration test passed, including adaptive HLS.\n");
 
-// EOF: /home/alan/src/wp-argent-video-processor/tests/ffmpeg-integration.php
+// EOF: tests/ffmpeg-integration.php

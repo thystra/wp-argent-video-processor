@@ -1,6 +1,6 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/includes/CLI_Command.php
+ * File: includes/CLI_Command.php
  */
 
 declare(strict_types=1);
@@ -167,4 +167,4 @@ final class CLI_Command
     }
 }
 
-// EOF: /home/alan/src/wp-argent-video-processor/includes/CLI_Command.php
+// EOF: includes/CLI_Command.php

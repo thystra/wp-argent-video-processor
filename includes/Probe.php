@@ -1,6 +1,6 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/includes/Probe.php
+ * File: includes/Probe.php
  */
 
 declare(strict_types=1);
@@ -31,6 +31,7 @@ final class Probe
 
         $result = $this->runner->run($command);
         if (0 !== $result['exit_code']) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Internal worker exception; escaped at every administrative display boundary.
             throw new RuntimeException('FFprobe failed: ' . trim($result['stderr']));
         }
 
@@ -100,4 +101,4 @@ final class Probe
     }
 }
 
-// EOF: /home/alan/src/wp-argent-video-processor/includes/Probe.php
+// EOF: includes/Probe.php

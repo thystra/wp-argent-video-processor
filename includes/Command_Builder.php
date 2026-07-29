@@ -1,6 +1,6 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/includes/Command_Builder.php
+ * File: includes/Command_Builder.php
  */
 
 declare(strict_types=1);
@@ -166,4 +166,4 @@ final class Command_Builder
     }
 }
 
-// EOF: /home/alan/src/wp-argent-video-processor/includes/Command_Builder.php
+// EOF: includes/Command_Builder.php

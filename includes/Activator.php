@@ -1,6 +1,6 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/includes/Activator.php
+ * File: includes/Activator.php
  */
 
 declare(strict_types=1);
@@ -73,4 +73,4 @@ final class Activator
     }
 }
 
-// EOF: /home/alan/src/wp-argent-video-processor/includes/Activator.php
+// EOF: includes/Activator.php

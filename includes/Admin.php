@@ -1,6 +1,6 @@
 <?php
 /**
- * /home/alan/src/wp-argent-video-processor/includes/Admin.php
+ * File: includes/Admin.php
  */
 
 declare(strict_types=1);
@@ -29,12 +29,37 @@ final class Admin
     public function menu(): void
     {
         add_options_page(
-            __('Argent Video Processor', 'wp-argent-video-processor'),
-            __('Argent Video', 'wp-argent-video-processor'),
+            __('ArgentWolf Video Processor', 'argentwolf-video-processor'),
+            __('ArgentWolf Video Processor', 'argentwolf-video-processor'),
             'manage_options',
             'argent-video-processor',
             array($this, 'page')
         );
+    }
+
+    /**
+     * Add convenient Settings and project links to the plugin row.
+     *
+     * @param array<string, string> $links Existing plugin action links.
+     * @return array<string, string>
+     */
+    public function plugin_action_links(array $links): array
+    {
+        $settings_link = sprintf(
+            '<a href="%s">%s</a>',
+            esc_url(admin_url('options-general.php?page=argent-video-processor')),
+            esc_html__('Settings', 'argentwolf-video-processor')
+        );
+        $project_link = sprintf(
+            '<a href="%s" target="_blank" rel="noopener noreferrer">%s</a>',
+            esc_url('https://github.com/thystra/wp-argentwolf-video-processor'),
+            esc_html__('GitHub project', 'argentwolf-video-processor')
+        );
+
+        array_unshift($links, $project_link);
+        array_unshift($links, $settings_link);
+
+        return $links;
     }
 
     /** @param array<string, string> $columns
@@ -42,7 +67,7 @@ final class Admin
      */
     public function media_columns(array $columns): array
     {
-        $columns['argent_video_status'] = __('Video processing', 'wp-argent-video-processor');
+        $columns['argent_video_status'] = __('Video processing', 'argentwolf-video-processor');
         return $columns;
     }
 
@@ -56,24 +81,24 @@ final class Admin
         echo '<strong>' . esc_html(ucfirst($status)) . '</strong>';
         $outputs = get_post_meta($attachment_id, '_argent_video_outputs', true);
         if (is_array($outputs) && ! empty($outputs['hls'])) {
-            echo '<br><span class="description">' . esc_html__('Adaptive HLS ready', 'wp-argent-video-processor') . '</span>';
+            echo '<br><span class="description">' . esc_html__('Adaptive HLS ready', 'argentwolf-video-processor') . '</span>';
         }
         $error = (string) get_post_meta($attachment_id, '_argent_video_last_error', true);
         if ('' !== $error) {
             echo '<br><span class="description" title="' . esc_attr($error) . '">' . esc_html(wp_trim_words($error, 10)) . '</span>';
         }
         $url = wp_nonce_url(admin_url('admin-post.php?action=argent_video_queue_attachment&attachment_id=' . $attachment_id), 'argent_video_queue_' . $attachment_id);
-        echo '<br><a href="' . esc_url($url) . '">' . esc_html__('Queue or reprocess', 'wp-argent-video-processor') . '</a>';
+        echo '<br><a href="' . esc_url($url) . '">' . esc_html__('Queue or reprocess', 'argentwolf-video-processor') . '</a>';
         if (in_array($status, array('queued', 'failed'), true)) {
             $cancel = wp_nonce_url(admin_url('admin-post.php?action=argent_video_cancel_attachment&attachment_id=' . $attachment_id), 'argent_video_cancel_' . $attachment_id);
-            echo ' | <a href="' . esc_url($cancel) . '">' . esc_html__('Cancel', 'wp-argent-video-processor') . '</a>';
+            echo ' | <a href="' . esc_url($cancel) . '">' . esc_html__('Cancel', 'argentwolf-video-processor') . '</a>';
         }
     }
 
     public function queue_action(): void
     {
         if (! current_user_can('upload_files')) {
-            wp_die(esc_html__('You are not allowed to process media.', 'wp-argent-video-processor'));
+            wp_die(esc_html__('You are not allowed to process media.', 'argentwolf-video-processor'));
         }
         $attachment_id = isset($_GET['attachment_id']) ? absint($_GET['attachment_id']) : 0;
         check_admin_referer('argent_video_queue_' . $attachment_id);
@@ -89,7 +114,7 @@ final class Admin
     public function bulk_action(): void
     {
         if (! current_user_can('manage_options')) {
-            wp_die(esc_html__('You are not allowed to bulk-process media.', 'wp-argent-video-processor'));
+            wp_die(esc_html__('You are not allowed to bulk-process media.', 'argentwolf-video-processor'));
         }
         check_admin_referer('argent_video_bulk_queue');
         $mode = sanitize_key((string) ($_POST['bulk_mode'] ?? 'smart'));
@@ -116,7 +141,7 @@ final class Admin
     public function cancel_action(): void
     {
         if (! current_user_can('upload_files')) {
-            wp_die(esc_html__('You are not allowed to process media.', 'wp-argent-video-processor'));
+            wp_die(esc_html__('You are not allowed to process media.', 'argentwolf-video-processor'));
         }
         $attachment_id = isset($_GET['attachment_id']) ? absint($_GET['attachment_id']) : 0;
         check_admin_referer('argent_video_cancel_' . $attachment_id);
@@ -128,7 +153,7 @@ final class Admin
     public function dispatch_action(): void
     {
         if (! current_user_can('manage_options')) {
-            wp_die(esc_html__('You are not allowed to launch the worker.', 'wp-argent-video-processor'));
+            wp_die(esc_html__('You are not allowed to launch the worker.', 'argentwolf-video-processor'));
         }
         check_admin_referer('argent_video_dispatch');
         $result = $this->launcher->launch();
@@ -138,17 +163,24 @@ final class Admin
 
     public function notices(): void
     {
+        /*
+         * These sanitized query parameters select a read-only notice after
+         * nonce-protected action handlers redirect back to the settings page.
+         * No state is changed while reading them.
+         */
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended
         if (empty($_GET['argent_video_notice'])) {
             return;
         }
         $notice = sanitize_key((string) $_GET['argent_video_notice']);
         $message = isset($_GET['argent_video_message']) ? sanitize_text_field(wp_unslash((string) $_GET['argent_video_message'])) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
         $labels = array(
-            'queued'    => __('Video queued for processing.', 'wp-argent-video-processor'),
-            'bulk'      => $message ?: __('Video backlog queued.', 'wp-argent-video-processor'),
-            'cancelled' => __('Queued video processing was cancelled.', 'wp-argent-video-processor'),
-            'launched'  => __('The background video worker was launched.', 'wp-argent-video-processor'),
-            'error'     => $message ?: __('The video action failed.', 'wp-argent-video-processor'),
+            'queued'    => __('Video queued for processing.', 'argentwolf-video-processor'),
+            'bulk'      => $message ?: __('Video backlog queued.', 'argentwolf-video-processor'),
+            'cancelled' => __('Queued video processing was cancelled.', 'argentwolf-video-processor'),
+            'launched'  => __('The background video worker was launched.', 'argentwolf-video-processor'),
+            'error'     => $message ?: __('The video action failed.', 'argentwolf-video-processor'),
         );
         $class = 'error' === $notice ? 'notice notice-error' : 'notice notice-success';
         if (isset($labels[$notice])) {
@@ -167,49 +199,49 @@ final class Admin
         $bulk = $this->bulk->summary();
         ?>
         <div class="wrap">
-            <h1><?php esc_html_e('Argent Video Processor', 'wp-argent-video-processor'); ?></h1>
-            <p><?php esc_html_e('Originals are preserved. A detached low-priority worker creates privacy-cleaned progressive derivatives and an adaptive HLS ladder.', 'wp-argent-video-processor'); ?></p>
+            <h1><?php esc_html_e('ArgentWolf Video Processor', 'argentwolf-video-processor'); ?></h1>
+            <p><?php esc_html_e('Originals are preserved. A detached low-priority worker creates privacy-cleaned progressive derivatives and an adaptive HLS ladder.', 'argentwolf-video-processor'); ?></p>
 
-            <h2><?php esc_html_e('Queue status', 'wp-argent-video-processor'); ?></h2>
+            <h2><?php esc_html_e('Queue status', 'argentwolf-video-processor'); ?></h2>
             <table class="widefat striped" style="max-width:900px"><tbody>
                 <?php foreach (array('queued', 'processing', 'complete', 'failed', 'cancelled') as $status) : ?>
                     <tr><th><?php echo esc_html(ucfirst($status)); ?></th><td><?php echo esc_html((string) $this->jobs->count($status)); ?></td></tr>
                 <?php endforeach; ?>
-                <tr><th><?php esc_html_e('Last launch', 'wp-argent-video-processor'); ?></th><td><code><?php echo esc_html(wp_json_encode($last_launch, JSON_UNESCAPED_SLASHES)); ?></code></td></tr>
-                <tr><th><?php esc_html_e('Last worker run', 'wp-argent-video-processor'); ?></th><td><code><?php echo esc_html(wp_json_encode($last_worker, JSON_UNESCAPED_SLASHES)); ?></code></td></tr>
+                <tr><th><?php esc_html_e('Last launch', 'argentwolf-video-processor'); ?></th><td><code><?php echo esc_html(wp_json_encode($last_launch, JSON_UNESCAPED_SLASHES)); ?></code></td></tr>
+                <tr><th><?php esc_html_e('Last worker run', 'argentwolf-video-processor'); ?></th><td><code><?php echo esc_html(wp_json_encode($last_worker, JSON_UNESCAPED_SLASHES)); ?></code></td></tr>
             </tbody></table>
-            <p><a class="button" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=argent_video_dispatch'), 'argent_video_dispatch')); ?>"><?php esc_html_e('Launch worker now', 'wp-argent-video-processor'); ?></a></p>
+            <p><a class="button" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=argent_video_dispatch'), 'argent_video_dispatch')); ?>"><?php esc_html_e('Launch worker now', 'argentwolf-video-processor'); ?></a></p>
 
-            <h2><?php esc_html_e('Process existing videos', 'wp-argent-video-processor'); ?></h2>
-            <p><?php esc_html_e('Backlog jobs are added to the same one-at-a-time queue used for new uploads. The page request only queues work; it does not run FFmpeg.', 'wp-argent-video-processor'); ?></p>
+            <h2><?php esc_html_e('Process existing videos', 'argentwolf-video-processor'); ?></h2>
+            <p><?php esc_html_e('Backlog jobs are added to the same one-at-a-time queue used for new uploads. The page request only queues work; it does not run FFmpeg.', 'argentwolf-video-processor'); ?></p>
             <table class="widefat striped" style="max-width:900px"><tbody>
-                <tr><th><?php esc_html_e('Video attachments', 'wp-argent-video-processor'); ?></th><td><?php echo esc_html((string) $bulk['total']); ?></td></tr>
-                <tr><th><?php esc_html_e('Completed derivatives', 'wp-argent-video-processor'); ?></th><td><?php echo esc_html((string) $bulk['complete']); ?></td></tr>
-                <tr><th><?php esc_html_e('Completed but missing HLS', 'wp-argent-video-processor'); ?></th><td><?php echo esc_html((string) $bulk['missing_hls']); ?></td></tr>
-                <tr><th><?php esc_html_e('Already queued or processing', 'wp-argent-video-processor'); ?></th><td><?php echo esc_html((string) $bulk['active']); ?></td></tr>
-                <tr><th><?php esc_html_e('Smart backlog candidates', 'wp-argent-video-processor'); ?></th><td><?php echo esc_html((string) $bulk['smart_candidates']); ?></td></tr>
+                <tr><th><?php esc_html_e('Video attachments', 'argentwolf-video-processor'); ?></th><td><?php echo esc_html((string) $bulk['total']); ?></td></tr>
+                <tr><th><?php esc_html_e('Completed derivatives', 'argentwolf-video-processor'); ?></th><td><?php echo esc_html((string) $bulk['complete']); ?></td></tr>
+                <tr><th><?php esc_html_e('Completed but missing HLS', 'argentwolf-video-processor'); ?></th><td><?php echo esc_html((string) $bulk['missing_hls']); ?></td></tr>
+                <tr><th><?php esc_html_e('Already queued or processing', 'argentwolf-video-processor'); ?></th><td><?php echo esc_html((string) $bulk['active']); ?></td></tr>
+                <tr><th><?php esc_html_e('Smart backlog candidates', 'argentwolf-video-processor'); ?></th><td><?php echo esc_html((string) $bulk['smart_candidates']); ?></td></tr>
             </tbody></table>
             <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" onsubmit="return window.confirm('Queue the selected existing videos? Processing will occur one video at a time in the background.');" style="max-width:900px;margin-top:1em">
                 <input type="hidden" name="action" value="argent_video_bulk_queue">
                 <?php wp_nonce_field('argent_video_bulk_queue'); ?>
                 <table class="form-table" role="presentation">
-                    <tr><th scope="row"><label for="argent-bulk-mode"><?php esc_html_e('Operation', 'wp-argent-video-processor'); ?></label></th><td>
+                    <tr><th scope="row"><label for="argent-bulk-mode"><?php esc_html_e('Operation', 'argentwolf-video-processor'); ?></label></th><td>
                         <select id="argent-bulk-mode" name="bulk_mode">
-                            <option value="smart"><?php esc_html_e('Smart queue: process missing videos and add HLS without recreating valid progressive files', 'wp-argent-video-processor'); ?></option>
-                            <option value="adaptive"><?php esc_html_e('Add adaptive HLS only to completed videos that do not have it', 'wp-argent-video-processor'); ?></option>
-                            <option value="all"><?php esc_html_e('Force reprocess every existing video with current settings', 'wp-argent-video-processor'); ?></option>
+                            <option value="smart"><?php esc_html_e('Smart queue: process missing videos and add HLS without recreating valid progressive files', 'argentwolf-video-processor'); ?></option>
+                            <option value="adaptive"><?php esc_html_e('Add adaptive HLS only to completed videos that do not have it', 'argentwolf-video-processor'); ?></option>
+                            <option value="all"><?php esc_html_e('Force reprocess every existing video with current settings', 'argentwolf-video-processor'); ?></option>
                         </select>
                     </td></tr>
-                    <tr><th scope="row"><?php esc_html_e('Optional upload-date range', 'wp-argent-video-processor'); ?></th><td>
-                        <label><?php esc_html_e('From', 'wp-argent-video-processor'); ?> <input type="date" name="after"></label>
+                    <tr><th scope="row"><?php esc_html_e('Optional upload-date range', 'argentwolf-video-processor'); ?></th><td>
+                        <label><?php esc_html_e('From', 'argentwolf-video-processor'); ?> <input type="date" name="after"></label>
                         &nbsp;
-                        <label><?php esc_html_e('Through', 'wp-argent-video-processor'); ?> <input type="date" name="through"></label>
+                        <label><?php esc_html_e('Through', 'argentwolf-video-processor'); ?> <input type="date" name="through"></label>
                     </td></tr>
                 </table>
-                <?php submit_button(__('Queue existing videos', 'wp-argent-video-processor'), 'secondary', 'submit', false); ?>
+                <?php submit_button(__('Queue existing videos', 'argentwolf-video-processor'), 'secondary', 'submit', false); ?>
             </form>
 
-            <h2><?php esc_html_e('Diagnostics', 'wp-argent-video-processor'); ?></h2>
+            <h2><?php esc_html_e('Diagnostics', 'argentwolf-video-processor'); ?></h2>
             <table class="widefat striped" style="max-width:900px"><thead><tr><th>Check</th><th>Status</th><th>Detail</th></tr></thead><tbody>
                 <?php foreach ($this->diagnostics->checks() as $check) : ?>
                     <tr><td><?php echo esc_html($check['check']); ?></td><td><?php echo esc_html(strtoupper($check['status'])); ?></td><td><code><?php echo esc_html($check['detail']); ?></code></td></tr>
@@ -218,7 +250,7 @@ final class Admin
 
             <form method="post" action="options.php">
                 <?php settings_fields('argent_video_processor'); ?>
-                <h2><?php esc_html_e('Settings', 'wp-argent-video-processor'); ?></h2>
+                <h2><?php esc_html_e('Settings', 'argentwolf-video-processor'); ?></h2>
                 <table class="form-table" role="presentation">
                     <tr><th scope="row">Automation</th><td>
                         <label><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION); ?>[auto_queue]" value="1" <?php checked(! empty($settings['auto_queue'])); ?>> Queue newly uploaded videos</label><br>
@@ -259,13 +291,16 @@ final class Admin
                 <?php submit_button(); ?>
             </form>
 
-            <h2><?php esc_html_e('WP-CLI', 'wp-argent-video-processor'); ?></h2>
+            <h2><?php esc_html_e('WP-CLI', 'argentwolf-video-processor'); ?></h2>
             <pre>wp argent-video diagnose
 wp argent-video jobs --status=failed
 wp argent-video enqueue &lt;attachment-id&gt; --force
 wp argent-video scan --mode=smart
 wp argent-video scan --mode=adaptive
 wp argent-video worker --once</pre>
+            <h2><?php esc_html_e('Support development', 'argentwolf-video-processor'); ?></h2>
+            <p><?php esc_html_e('ArgentWolf Video Processor is free software. Source code, issue tracking, and ways to support continued development are available on GitHub.', 'argentwolf-video-processor'); ?></p>
+            <p><a class="button button-secondary" href="<?php echo esc_url('https://github.com/thystra/wp-argentwolf-video-processor'); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('View project on GitHub', 'argentwolf-video-processor'); ?></a></p>
         </div>
         <?php
     }
@@ -305,4 +340,4 @@ wp argent-video worker --once</pre>
     }
 }
 
-// EOF: /home/alan/src/wp-argent-video-processor/includes/Admin.php
+// EOF: includes/Admin.php
